@@ -22,7 +22,6 @@
         const { useState, useEffect } = React;
 
         // Firebase Configuration - Replace with your actual Firebase config
-        const firebaseConfig = {
 const firebaseConfig = {
   apiKey: "AIzaSyCBN6opABavXAJCvCnRvghYU4E0faOM7ng",
   authDomain: "community-hub-saltproject.firebaseapp.com",
@@ -135,7 +134,7 @@ const firebaseConfig = {
             const [showRegistrationForm, setShowRegistrationForm] = useState(false);
             const [showMessageModal, setShowMessageModal] = useState(false);
             const [messageRecipient, setMessageRecipient] = useState(null);
-            const [showMessagesModal, setShowMessagesModal] = useState(false);
+            const [messageText, setMessageText] = useState('');
             
             const [authData, setAuthData] = useState({
                 email: '',
@@ -261,23 +260,14 @@ const firebaseConfig = {
             useEffect(() => {
                 if (!isFirebaseConfigured() || !currentUser) return;
 
-                console.log('Setting up messages listener for user:', currentUser.id);
-
                 const unsubscribe = db.collection('messages')
                     .where('participants', 'array-contains', currentUser.id)
                     .orderBy('timestamp', 'desc')
                     .onSnapshot((snapshot) => {
-                        console.log('Messages snapshot received, count:', snapshot.docs.length);
-                        const messagesData = snapshot.docs.map(doc => {
-                            const data = doc.data();
-                            console.log('Message document:', doc.id, data);
-                            return {
-                                id: doc.id,
-                                ...data
-                            };
-                        });
-                        
-                        console.log('Processed messages data:', messagesData);
+                        const messagesData = snapshot.docs.map(doc => ({
+                            id: doc.id,
+                            ...doc.data()
+                        }));
                         setMessages(messagesData);
                     }, (error) => {
                         console.error('Error loading messages:', error);
@@ -469,11 +459,8 @@ const firebaseConfig = {
 
                 if (!messageText.trim() || !currentUser || !messageRecipient) return;
 
-                console.log('Sending message from:', currentUser.id, 'to:', messageRecipient.id);
-                console.log('Message content:', messageText.trim());
-
                 try {
-                    const messageData = {
+                    await db.collection('messages').add({
                         fromId: currentUser.id,
                         fromName: currentUser.name,
                         toId: messageRecipient.id,
@@ -481,15 +468,8 @@ const firebaseConfig = {
                         message: messageText.trim(),
                         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                         participants: [currentUser.id, messageRecipient.id],
-                        read: false,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    };
-
-                    console.log('Message data to be saved:', messageData);
-
-                    const docRef = await db.collection('messages').add(messageData);
-                    
-                    console.log('Message saved with ID:', docRef.id);
+                        read: false
+                    });
 
                     setMessageText('');
                     setShowMessageModal(false);
@@ -499,34 +479,23 @@ const firebaseConfig = {
 
                 } catch (error) {
                     console.error('Error sending message:', error);
-                    setError(`Error sending message: ${error.message}`);
+                    setError('Error sending message');
                 }
             };
 
-            const openMessageModal = (resident, event) => {
-                console.log('openMessageModal called with:', resident);
-                
-                if (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    console.log('Event prevented');
-                }
-                
+            const openMessageModal = (resident) => {
                 if (!currentUser) {
-                    alert('Please sign in first to send messages');
+                    setError('Please sign in first to send messages');
                     return;
                 }
                 
                 if (currentUser.id === resident.id) {
-                    console.log('Cannot message yourself');
                     return;
                 }
                 
-                console.log('Setting message recipient:', resident.name);
                 setMessageRecipient(resident);
                 setShowMessageModal(true);
                 setError('');
-                console.log('Modal should be open now');
             };
 
             const canMessageResident = (resident) => {
@@ -872,13 +841,12 @@ const firebaseConfig = {
                                     </div>
                                     <p className="text-2xl font-bold text-green-600">{getUniqueZones().length}</p>
                                 </div>
-                                <div className="bg-purple-50 p-6 rounded-lg cursor-pointer hover:bg-purple-100 transition-colors" onClick={() => setShowMessagesModal(true)}>
+                                <div className="bg-purple-50 p-6 rounded-lg">
                                     <div className="flex items-center gap-2 mb-2">
                                         <MessageCircle className="text-purple-600 w-5 h-5" />
                                         <h3 className="font-semibold text-gray-800">Your Messages</h3>
                                     </div>
-                                    <p className="text-2xl font-bold text-purple-600">{messages.length}</p>
-                                    <p className="text-xs text-purple-600 mt-1">Click to view messages</p>
+                                    <p className="text-2xl font-bold text-purple-600">{messages.filter(m => m.toId === currentUser?.id).length}</p>
                                 </div>
                             </div>
 
@@ -950,38 +918,24 @@ const firebaseConfig = {
                                 <h3 className="font-semibold text-yellow-800 mb-2">Debug Info:</h3>
                                 <p className="text-sm text-yellow-700">Residents array length: {residents.length}</p>
                                 <p className="text-sm text-yellow-700">Current user: {currentUser ? currentUser.name : 'None'}</p>
-                                <p className="text-sm text-yellow-700">Message modal open: {showMessageModal ? 'Yes' : 'No'}</p>
-                                <p className="text-sm text-yellow-700">Message recipient: {messageRecipient ? messageRecipient.name : 'None'}</p>
-                                <div className="flex gap-2 mt-2">
-                                    <button
-                                        onClick={() => {
-                                            console.log('Current residents:', residents);
-                                            console.log('Current user:', currentUser);
-                                            // Force reload residents
-                                            if (currentUser) {
-                                                db.collection('users').get().then(snapshot => {
-                                                    console.log('Manual fetch - documents found:', snapshot.docs.length);
-                                                    snapshot.docs.forEach(doc => {
-                                                        console.log('Document:', doc.id, doc.data());
-                                                    });
+                                <button
+                                    onClick={() => {
+                                        console.log('Current residents:', residents);
+                                        console.log('Current user:', currentUser);
+                                        // Force reload residents
+                                        if (currentUser) {
+                                            db.collection('users').get().then(snapshot => {
+                                                console.log('Manual fetch - documents found:', snapshot.docs.length);
+                                                snapshot.docs.forEach(doc => {
+                                                    console.log('Document:', doc.id, doc.data());
                                                 });
-                                            }
-                                        }}
-                                        className="bg-yellow-600 text-white px-3 py-1 rounded text-sm"
-                                    >
-                                        Debug Data
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            console.log('Test modal button clicked');
-                                            setShowMessageModal(true);
-                                            setMessageRecipient({ id: 'test', name: 'Test User', zoneId: 'A', buildingId: '1', unitNumber: '101' });
-                                        }}
-                                        className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
-                                    >
-                                        Test Modal
-                                    </button>
-                                </div>
+                                            });
+                                        }
+                                    }}
+                                    className="mt-2 bg-yellow-600 text-white px-3 py-1 rounded text-sm"
+                                >
+                                    Debug Data
+                                </button>
                             </div>
 
                             {residents.length === 0 ? (
@@ -1044,8 +998,7 @@ const firebaseConfig = {
                                                                         </div>
                                                                         {canMessageResident(resident) && (
                                                                             <button
-                                                                                type="button"
-                                                                                onClick={(e) => openMessageModal(resident, e)}
+                                                                                onClick={() => openMessageModal(resident)}
                                                                                 className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
                                                                             >
                                                                                 <MessageCircle className="w-4 h-4" />
@@ -1109,7 +1062,7 @@ const firebaseConfig = {
                                                                                         } rounded-lg p-3 hover:shadow-md transition-all ${
                                                                                             canMessageResident(resident) ? 'cursor-pointer group' : ''
                                                                                         }`}
-                                                                                        onClick={(e) => canMessageResident(resident) && openMessageModal(resident, e)}
+                                                                                        onClick={() => canMessageResident(resident) && openMessageModal(resident)}
                                                                                     >
                                                                                         <div className="text-center">
                                                                                             <div className="flex items-center justify-center gap-1 mb-1">
@@ -1262,71 +1215,11 @@ const firebaseConfig = {
                             </div>
                         )}
 
-                        {/* Messages View Modal */}
-                        {showMessagesModal && (
+                        {/* Message Modal */}
+                        {showMessageModal && messageRecipient && (
                             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                                <div className="bg-white rounded-xl p-8 max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
-                                    <div className="flex items-center justify-between mb-6">
-                                        <h2 className="text-2xl font-bold text-gray-800">Your Messages</h2>
-                                        <button
-                                            onClick={() => setShowMessagesModal(false)}
-                                            className="text-gray-500 hover:text-gray-700"
-                                        >
-                                            ✕
-                                        </button>
-                                    </div>
-                                    
-                                    {messages.length === 0 ? (
-                                        <div className="text-center py-8">
-                                            <MessageCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                                            <p className="text-gray-600">No messages yet</p>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-4">
-                                            {messages.map(message => (
-                                                <div key={message.id} className="border border-gray-200 rounded-lg p-4">
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <div className="flex items-center gap-2">
-                                                            <User className="w-4 h-4 text-gray-600" />
-                                                            <span className="font-semibold text-gray-800">
-                                                                {message.fromId === currentUser.id ? `To: ${message.toName}` : `From: ${message.fromName}`}
-                                                            </span>
-                                                        </div>
-                                                        <span className="text-xs text-gray-500">
-                                                            {message.timestamp?.toDate ? message.timestamp.toDate().toLocaleString() : 'Just now'}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-gray-700">{message.message}</p>
-                                                    <div className="mt-2 text-xs text-gray-500">
-                                                        {message.fromId === currentUser.id ? 'Sent' : 'Received'}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                    
-                                    <div className="mt-6 text-center">
-                                        <button
-                                            onClick={() => setShowMessagesModal(false)}
-                                            className="bg-gray-300 text-gray-700 py-2 px-6 rounded-lg hover:bg-gray-400 transition-colors"
-                                        >
-                                            Close
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Simple Message Modal for Testing */}
-                        {showMessageModal && (
-                            <div 
-                                className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-                                style={{ zIndex: 9999 }}
-                            >
                                 <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
-                                    <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                                        {messageRecipient ? `Send Message to ${messageRecipient.name}` : 'Send Message'}
-                                    </h2>
+                                    <h2 className="text-2xl font-bold text-gray-800 mb-4">Send Message</h2>
                                     
                                     {error && (
                                         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
@@ -1334,15 +1227,12 @@ const firebaseConfig = {
                                         </div>
                                     )}
                                     
-                                    {messageRecipient && (
-                                        <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                                            <p className="font-semibold text-gray-800">{messageRecipient.name}</p>
-                                            <p className="text-sm text-gray-600">
-                                                Zone {messageRecipient.zoneId} • Building {messageRecipient.buildingId} • Unit {messageRecipient.unitNumber}
-                                            </p>
-                                        </div>
-                                    )}
-                                    
+                                    <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                                        <p className="font-semibold text-gray-800">{messageRecipient.name}</p>
+                                        <p className="text-sm text-gray-600">
+                                            Zone {messageRecipient.zoneId} • Building {messageRecipient.buildingId} • Unit {messageRecipient.unitNumber}
+                                        </p>
+                                    </div>
                                     <div className="mb-4">
                                         <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
                                         <textarea
@@ -1352,24 +1242,17 @@ const firebaseConfig = {
                                             placeholder="Type your message here..."
                                         />
                                     </div>
-                                    
                                     <div className="flex gap-4">
                                         <button
-                                            onClick={() => {
-                                                console.log('Send button clicked');
-                                                if (messageText.trim()) {
-                                                    handleSendMessage();
-                                                } else {
-                                                    alert('Please enter a message');
-                                                }
-                                            }}
-                                            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                                            onClick={handleSendMessage}
+                                            disabled={loading || !messageText.trim()}
+                                            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                                         >
-                                            Send Message
+                                            <Send className="w-4 h-4" />
+                                            {loading ? 'Sending...' : 'Send Message'}
                                         </button>
                                         <button
                                             onClick={() => {
-                                                console.log('Cancel button clicked');
                                                 setShowMessageModal(false);
                                                 setMessageRecipient(null);
                                                 setMessageText('');
