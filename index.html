@@ -3,11 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Salt Project Community Hub</title>
+    <title>Community Hub</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-auth-compat.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-firestore-compat.min.js"></script>
     <style>
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
     </style>
@@ -16,6 +20,24 @@
     <div id="root"></div>
     <script type="text/babel">
         const { useState, useEffect } = React;
+
+        // Firebase Configuration - Replace with your Firebase config
+        const firebaseConfig = {
+            apiKey: "your-api-key-here",
+            authDomain: "your-project-id.firebaseapp.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project-id.appspot.com",
+            messagingSenderId: "your-sender-id",
+            appId: "your-app-id"
+        };
+
+        // Initialize Firebase (only if not already initialized)
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
         // Lucide React icons (simplified versions)
         const Users = ({ className = "w-4 h-4" }) => (
@@ -91,9 +113,14 @@
             </svg>
         );
 
+        const AlertTriangle = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+        );
+
         function CommunityHub() {
             const [residents, setResidents] = useState([]);
-            const [users, setUsers] = useState([]);
             const [messages, setMessages] = useState([]);
             const [selectedBuilding, setSelectedBuilding] = useState('');
             const [selectedZone, setSelectedZone] = useState('');
@@ -101,6 +128,8 @@
             const [currentUser, setCurrentUser] = useState(null);
             const [isAuthenticated, setIsAuthenticated] = useState(false);
             const [authMode, setAuthMode] = useState('signin');
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState('');
             
             const [showRegistrationForm, setShowRegistrationForm] = useState(false);
             const [showMessageModal, setShowMessageModal] = useState(false);
@@ -127,18 +156,56 @@
                 phone: ''
             });
 
-            useEffect(() => {
-                const savedUsers = JSON.parse(localStorage.getItem('neighborApp_users') || '[]');
-                const savedResidents = JSON.parse(localStorage.getItem('neighborApp_residents') || '[]');
-                const savedMessages = JSON.parse(localStorage.getItem('neighborApp_messages') || '[]');
-                const savedCurrentUser = localStorage.getItem('neighborApp_currentUser');
+            // Check if Firebase is configured
+            const isFirebaseConfigured = () => {
+                return firebaseConfig.apiKey !== "your-api-key-here";
+            };
 
-                if (savedUsers.length === 0) {
+            // Initialize auth state listener
+            useEffect(() => {
+                if (!isFirebaseConfigured()) {
+                    setLoading(false);
+                    return;
+                }
+
+                const unsubscribe = auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        try {
+                            // Get user profile from Firestore
+                            const userDoc = await db.collection('users').doc(user.uid).get();
+                            if (userDoc.exists) {
+                                const userData = { id: user.uid, ...userDoc.data() };
+                                setCurrentUser(userData);
+                                setIsAuthenticated(true);
+                                
+                                // Update user online status
+                                await db.collection('users').doc(user.uid).update({
+                                    isOnline: true,
+                                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                                });
+                            }
+                        } catch (error) {
+                            console.error('Error fetching user data:', error);
+                            setError('Error loading user data');
+                        }
+                    } else {
+                        setCurrentUser(null);
+                        setIsAuthenticated(false);
+                    }
+                    setLoading(false);
+                });
+
+                return () => unsubscribe();
+            }, []);
+
+            // Load residents from Firestore
+            useEffect(() => {
+                if (!isFirebaseConfigured()) {
+                    // Load demo data for offline mode
                     const demoUsers = [
                         { 
-                            id: 1, 
+                            id: 'demo1', 
                             email: 'demo@example.com', 
-                            password: 'demo123', 
                             name: 'Demo User', 
                             zoneId: 'A', 
                             buildingId: '1', 
@@ -148,169 +215,271 @@
                             isOnline: false 
                         }
                     ];
-                    setUsers(demoUsers);
                     setResidents(demoUsers);
-                    localStorage.setItem('neighborApp_users', JSON.stringify(demoUsers));
-                    localStorage.setItem('neighborApp_residents', JSON.stringify(demoUsers));
-                } else {
-                    setUsers(savedUsers);
-                    setResidents(savedResidents);
-                    setMessages(savedMessages);
+                    return;
                 }
-                
-                if (savedCurrentUser) {
-                    const user = JSON.parse(savedCurrentUser);
-                    setCurrentUser(user);
-                    setIsAuthenticated(true);
-                }
+
+                const unsubscribe = db.collection('users')
+                    .orderBy('zoneId')
+                    .orderBy('buildingId')
+                    .orderBy('unitNumber')
+                    .onSnapshot((snapshot) => {
+                        const residentsData = snapshot.docs.map(doc => ({
+                            id: doc.id,
+                            ...doc.data()
+                        }));
+                        setResidents(residentsData);
+                    }, (error) => {
+                        console.error('Error loading residents:', error);
+                        setError('Error loading residents data');
+                    });
+
+                return () => unsubscribe();
             }, []);
 
-            const saveToStorage = (key, data) => {
-                localStorage.setItem(key, JSON.stringify(data));
-            };
+            // Load messages from Firestore
+            useEffect(() => {
+                if (!isFirebaseConfigured() || !currentUser) return;
 
-            const handleSignUp = () => {
+                const unsubscribe = db.collection('messages')
+                    .where('participants', 'array-contains', currentUser.id)
+                    .orderBy('timestamp', 'desc')
+                    .onSnapshot((snapshot) => {
+                        const messagesData = snapshot.docs.map(doc => ({
+                            id: doc.id,
+                            ...doc.data()
+                        }));
+                        setMessages(messagesData);
+                    }, (error) => {
+                        console.error('Error loading messages:', error);
+                        setError('Error loading messages');
+                    });
+
+                return () => unsubscribe();
+            }, [currentUser]);
+
+            const handleSignUp = async () => {
+                if (!isFirebaseConfigured()) {
+                    setError('Firebase is not configured. Please add your Firebase configuration.');
+                    return;
+                }
+
                 const { email, password, confirmPassword, name, zoneId, buildingId, unitNumber, phone } = authData;
                 
                 if (!email || !password || !name || !zoneId || !buildingId || !unitNumber) {
-                    alert('Please fill in all required fields');
+                    setError('Please fill in all required fields');
                     return;
                 }
                 
                 if (password !== confirmPassword) {
-                    alert('Passwords do not match');
-                    return;
-                }
-                
-                if (users.find(user => user.email === email)) {
-                    alert('Email already exists');
-                    return;
-                }
-                
-                if (residents.find(resident => 
-                    resident.zoneId === zoneId && 
-                    resident.buildingId === buildingId && 
-                    resident.unitNumber === unitNumber
-                )) {
-                    alert('This unit is already registered');
+                    setError('Passwords do not match');
                     return;
                 }
 
-                const newUser = {
-                    id: Date.now(),
-                    email,
-                    password,
-                    name,
-                    zoneId,
-                    buildingId,
-                    unitNumber,
-                    phone,
-                    joinedDate: new Date().toLocaleDateString(),
-                    isOnline: true
-                };
-
-                const updatedUsers = [...users, newUser];
-                const updatedResidents = [...residents, newUser];
-                
-                setUsers(updatedUsers);
-                setResidents(updatedResidents);
-                setCurrentUser(newUser);
-                setIsAuthenticated(true);
-                
-                saveToStorage('neighborApp_users', updatedUsers);
-                saveToStorage('neighborApp_residents', updatedResidents);
-                saveToStorage('neighborApp_currentUser', newUser);
-                
-                setAuthData({
-                    email: '',
-                    password: '',
-                    confirmPassword: '',
-                    name: '',
-                    zoneId: '',
-                    buildingId: '',
-                    unitNumber: '',
-                    phone: ''
-                });
-            };
-
-            const handleSignIn = () => {
-                const { email, password } = authData;
-                
-                if (!email || !password) {
-                    alert('Please enter email and password');
+                if (password.length < 6) {
+                    setError('Password must be at least 6 characters long');
                     return;
                 }
 
-                const user = users.find(u => u.email === email && u.password === password);
-                
-                if (!user) {
-                    alert('Invalid email or password');
-                    return;
-                }
+                setLoading(true);
+                setError('');
 
-                const updatedUser = { ...user, isOnline: true };
-                const updatedUsers = users.map(u => u.id === user.id ? updatedUser : u);
-                const updatedResidents = residents.map(r => r.id === user.id ? updatedUser : r);
-                
-                setUsers(updatedUsers);
-                setResidents(updatedResidents);
-                setCurrentUser(updatedUser);
-                setIsAuthenticated(true);
-                
-                saveToStorage('neighborApp_users', updatedUsers);
-                saveToStorage('neighborApp_residents', updatedResidents);
-                saveToStorage('neighborApp_currentUser', updatedUser);
-                
-                setAuthData({ email: '', password: '', confirmPassword: '', name: '', zoneId: '', buildingId: '', unitNumber: '', phone: '' });
-            };
+                try {
+                    // Check if unit is already taken
+                    const existingUnit = await db.collection('users')
+                        .where('zoneId', '==', zoneId)
+                        .where('buildingId', '==', buildingId)
+                        .where('unitNumber', '==', unitNumber)
+                        .get();
 
-            const handleSignOut = () => {
-                if (currentUser) {
-                    const updatedUsers = users.map(u => 
-                        u.id === currentUser.id ? { ...u, isOnline: false } : u
-                    );
-                    const updatedResidents = residents.map(r => 
-                        r.id === currentUser.id ? { ...r, isOnline: false } : r
-                    );
-                    
-                    setUsers(updatedUsers);
-                    setResidents(updatedResidents);
-                    saveToStorage('neighborApp_users', updatedUsers);
-                    saveToStorage('neighborApp_residents', updatedResidents);
-                }
-                
-                setCurrentUser(null);
-                setIsAuthenticated(false);
-                localStorage.removeItem('neighborApp_currentUser');
-            };
-
-            const handleRegistration = () => {
-                if (formData.name && formData.zoneId && formData.buildingId && formData.unitNumber) {
-                    if (residents.find(r => 
-                        r.zoneId === formData.zoneId && 
-                        r.buildingId === formData.buildingId && 
-                        r.unitNumber === formData.unitNumber
-                    )) {
-                        alert('This unit is already registered');
+                    if (!existingUnit.empty) {
+                        setError('This unit is already registered');
+                        setLoading(false);
                         return;
                     }
 
-                    const newResident = {
-                        id: Date.now(),
-                        ...formData,
-                        joinedDate: new Date().toLocaleDateString(),
+                    // Create user account
+                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                    const user = userCredential.user;
+
+                    // Create user profile in Firestore
+                    await db.collection('users').doc(user.uid).set({
+                        email,
+                        name,
+                        zoneId,
+                        buildingId,
+                        unitNumber,
+                        phone: phone || '',
+                        joinedDate: firebase.firestore.FieldValue.serverTimestamp(),
                         isOnline: true,
-                        email: formData.email || currentUser?.email,
-                        registeredBy: currentUser?.name
-                    };
-                    
-                    const updatedResidents = [...residents, newResident];
-                    setResidents(updatedResidents);
-                    saveToStorage('neighborApp_residents', updatedResidents);
-                    
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    setAuthData({
+                        email: '',
+                        password: '',
+                        confirmPassword: '',
+                        name: '',
+                        zoneId: '',
+                        buildingId: '',
+                        unitNumber: '',
+                        phone: ''
+                    });
+
+                } catch (error) {
+                    console.error('Error during sign up:', error);
+                    setError(error.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleSignIn = async () => {
+                if (!isFirebaseConfigured()) {
+                    setError('Firebase is not configured. Please add your Firebase configuration.');
+                    return;
+                }
+
+                const { email, password } = authData;
+                
+                if (!email || !password) {
+                    setError('Please enter email and password');
+                    return;
+                }
+
+                setLoading(true);
+                setError('');
+
+                try {
+                    await auth.signInWithEmailAndPassword(email, password);
+                    setAuthData({ email: '', password: '', confirmPassword: '', name: '', zoneId: '', buildingId: '', unitNumber: '', phone: '' });
+                } catch (error) {
+                    console.error('Error during sign in:', error);
+                    setError(error.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleSignOut = async () => {
+                if (!isFirebaseConfigured()) {
+                    setCurrentUser(null);
+                    setIsAuthenticated(false);
+                    return;
+                }
+
+                try {
+                    if (currentUser) {
+                        // Update user online status
+                        await db.collection('users').doc(currentUser.id).update({
+                            isOnline: false,
+                            lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
+                    await auth.signOut();
+                } catch (error) {
+                    console.error('Error during sign out:', error);
+                    setError('Error signing out');
+                }
+            };
+
+            const handleRegistration = async () => {
+                if (!isFirebaseConfigured()) {
+                    setError('Firebase is not configured. Please add your Firebase configuration.');
+                    return;
+                }
+
+                if (!formData.name || !formData.zoneId || !formData.buildingId || !formData.unitNumber) {
+                    setError('Please fill in all required fields');
+                    return;
+                }
+
+                try {
+                    // Check if unit is already taken
+                    const existingUnit = await db.collection('users')
+                        .where('zoneId', '==', formData.zoneId)
+                        .where('buildingId', '==', formData.buildingId)
+                        .where('unitNumber', '==', formData.unitNumber)
+                        .get();
+
+                    if (!existingUnit.empty) {
+                        setError('This unit is already registered');
+                        return;
+                    }
+
+                    // Add new resident (admin feature)
+                    await db.collection('users').add({
+                        name: formData.name,
+                        zoneId: formData.zoneId,
+                        buildingId: formData.buildingId,
+                        unitNumber: formData.unitNumber,
+                        email: formData.email || '',
+                        phone: formData.phone || '',
+                        joinedDate: firebase.firestore.FieldValue.serverTimestamp(),
+                        isOnline: false,
+                        registeredBy: currentUser?.id,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
                     setFormData({ name: '', zoneId: '', buildingId: '', unitNumber: '', email: '', phone: '' });
                     setShowRegistrationForm(false);
+                    setError('');
+
+                } catch (error) {
+                    console.error('Error adding resident:', error);
+                    setError('Error adding resident');
                 }
+            };
+
+            const handleSendMessage = async () => {
+                if (!isFirebaseConfigured()) {
+                    setError('Firebase is not configured. Please add your Firebase configuration.');
+                    return;
+                }
+
+                if (!messageText.trim() || !currentUser || !messageRecipient) return;
+
+                try {
+                    await db.collection('messages').add({
+                        fromId: currentUser.id,
+                        fromName: currentUser.name,
+                        toId: messageRecipient.id,
+                        toName: messageRecipient.name,
+                        message: messageText.trim(),
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        participants: [currentUser.id, messageRecipient.id],
+                        read: false
+                    });
+
+                    setMessageText('');
+                    setShowMessageModal(false);
+                    setMessageRecipient(null);
+                    setError('');
+                    alert(`Message sent to ${messageRecipient.name}!`);
+
+                } catch (error) {
+                    console.error('Error sending message:', error);
+                    setError('Error sending message');
+                }
+            };
+
+            const openMessageModal = (resident) => {
+                if (!currentUser) {
+                    setError('Please sign in first to send messages');
+                    return;
+                }
+                
+                if (currentUser.id === resident.id) {
+                    return;
+                }
+                
+                setMessageRecipient(resident);
+                setShowMessageModal(true);
+                setError('');
+            };
+
+            const canMessageResident = (resident) => {
+                return currentUser && currentUser.id !== resident.id;
             };
 
             const getUniqueZones = () => {
@@ -354,36 +523,65 @@
                 }));
             };
 
-            const handleSendMessage = () => {
-                if (messageText.trim() && currentUser) {
-                    const newMessage = {
-                        id: Date.now(),
-                        from: currentUser,
-                        to: messageRecipient,
-                        message: messageText,
-                        timestamp: new Date().toLocaleString(),
-                        read: false
-                    };
-                    
-                    const updatedMessages = [...messages, newMessage];
-                    setMessages(updatedMessages);
-                    saveToStorage('neighborApp_messages', updatedMessages);
-                    
-                    setMessageText('');
-                    setShowMessageModal(false);
-                    setMessageRecipient(null);
-                    alert(`Message sent to ${messageRecipient.name}!`);
-                }
-            };
+            if (loading) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+                        <div className="text-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                            <p className="text-gray-600">Loading...</p>
+                        </div>
+                    </div>
+                );
+            }
 
-            const openMessageModal = (resident) => {
-                if (!currentUser) {
-                    alert('Please sign in first to send messages');
-                    return;
-                }
-                setMessageRecipient(resident);
-                setShowMessageModal(true);
-            };
+            // Firebase configuration warning
+            if (!isFirebaseConfigured()) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-100 flex items-center justify-center p-6">
+                        <div className="bg-white rounded-xl shadow-2xl p-8 max-w-2xl w-full">
+                            <div className="text-center mb-6">
+                                <AlertTriangle className="w-16 h-16 text-red-600 mx-auto mb-4" />
+                                <h1 className="text-3xl font-bold text-gray-800 mb-2">Firebase Configuration Required</h1>
+                                <p className="text-gray-600">Please configure Firebase to enable authentication and data storage</p>
+                            </div>
+
+                            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                                <div className="flex">
+                                    <AlertTriangle className="w-5 h-5 text-yellow-400 mr-2" />
+                                    <div>
+                                        <h3 className="text-lg font-medium text-yellow-800">Setup Instructions:</h3>
+                                        <ol className="mt-2 text-sm text-yellow-700 list-decimal list-inside space-y-1">
+                                            <li>Create a Firebase project at <a href="https://console.firebase.google.com" target="_blank" className="underline">Firebase Console</a></li>
+                                            <li>Enable Authentication (Email/Password)</li>
+                                            <li>Create a Firestore database</li>
+                                            <li>Get your Firebase config from Project Settings</li>
+                                            <li>Replace the firebaseConfig object in this code with your actual config</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-gray-100 rounded-lg p-4">
+                                <h3 className="font-semibold text-gray-800 mb-2">Sample Firebase Config:</h3>
+                                <pre className="text-sm text-gray-600 overflow-x-auto">
+{`const firebaseConfig = {
+  apiKey: "your-actual-api-key",
+  authDomain: "your-project.firebaseapp.com",
+  projectId: "your-project-id",
+  storageBucket: "your-project.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "your-app-id"
+};`}
+                                </pre>
+                            </div>
+
+                            <div className="mt-6 text-center">
+                                <p className="text-sm text-gray-500">The app is currently running in demo mode with limited functionality.</p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
 
             if (!isAuthenticated) {
                 return (
@@ -395,17 +593,18 @@
                                 <p className="text-gray-600">Connect with your neighbors</p>
                             </div>
 
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                                <p className="text-sm text-blue-800">
-                                    <strong>Demo Account:</strong><br />
-                                    Email: demo@example.com<br />
-                                    Password: demo123
-                                </p>
-                            </div>
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                                    <p className="text-sm text-red-800">{error}</p>
+                                </div>
+                            )}
 
                             <div className="flex bg-gray-100 rounded-lg p-1 mb-6">
                                 <button
-                                    onClick={() => setAuthMode('signin')}
+                                    onClick={() => {
+                                        setAuthMode('signin');
+                                        setError('');
+                                    }}
                                     className={`flex-1 py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2 ${
                                         authMode === 'signin' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
                                     }`}
@@ -414,7 +613,10 @@
                                     Sign In
                                 </button>
                                 <button
-                                    onClick={() => setAuthMode('signup')}
+                                    onClick={() => {
+                                        setAuthMode('signup');
+                                        setError('');
+                                    }}
                                     className={`flex-1 py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2 ${
                                         authMode === 'signup' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
                                     }`}
@@ -514,9 +716,10 @@
                                 
                                 <button
                                     onClick={authMode === 'signin' ? handleSignIn : handleSignUp}
-                                    className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                                    disabled={loading}
+                                    className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold"
                                 >
-                                    {authMode === 'signin' ? 'Sign In' : 'Create Account'}
+                                    {loading ? 'Please wait...' : (authMode === 'signin' ? 'Sign In' : 'Create Account')}
                                 </button>
                             </div>
 
@@ -524,7 +727,10 @@
                                 <p>
                                     {authMode === 'signin' ? "Don't have an account? " : "Already have an account? "}
                                     <button
-                                        onClick={() => setAuthMode(authMode === 'signin' ? 'signup' : 'signin')}
+                                        onClick={() => {
+                                            setAuthMode(authMode === 'signin' ? 'signup' : 'signin');
+                                            setError('');
+                                        }}
                                         className="text-blue-600 hover:underline font-medium"
                                     >
                                         {authMode === 'signin' ? 'Sign up here' : 'Sign in here'}
@@ -556,7 +762,10 @@
                                         </div>
                                     )}
                                     <button
-                                        onClick={() => setShowRegistrationForm(true)}
+                                        onClick={() => {
+                                            setShowRegistrationForm(true);
+                                            setError('');
+                                        }}
                                         className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
                                     >
                                         <Plus className="w-4 h-4" />
@@ -571,6 +780,12 @@
                                     </button>
                                 </div>
                             </div>
+
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                                    <p className="text-sm text-red-800">{error}</p>
+                                </div>
+                            )}
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                                 <div className="bg-blue-50 p-6 rounded-lg">
@@ -592,7 +807,7 @@
                                         <MessageCircle className="text-purple-600 w-5 h-5" />
                                         <h3 className="font-semibold text-gray-800">Your Messages</h3>
                                     </div>
-                                    <p className="text-2xl font-bold text-purple-600">{messages.filter(m => m.to?.id === currentUser?.id).length}</p>
+                                    <p className="text-2xl font-bold text-purple-600">{messages.filter(m => m.toId === currentUser?.id).length}</p>
                                 </div>
                             </div>
 
@@ -704,6 +919,9 @@
                                                                                     )}
                                                                                 </div>
                                                                                 <span className="font-semibold text-gray-800">{resident.name}</span>
+                                                                                {currentUser && currentUser.id === resident.id && (
+                                                                                    <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">You</span>
+                                                                                )}
                                                                             </div>
                                                                             <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
                                                                                 Unit {resident.unitNumber}
@@ -713,15 +931,17 @@
                                                                             <p>Zone: {resident.zoneId} • Building: {resident.buildingId}</p>
                                                                             {resident.email && <p>Email: {resident.email}</p>}
                                                                             {resident.phone && <p>Phone: {resident.phone}</p>}
-                                                                            <p>Joined: {resident.joinedDate}</p>
+                                                                            <p>Joined: {resident.joinedDate?.toDate ? resident.joinedDate.toDate().toLocaleDateString() : resident.joinedDate}</p>
                                                                         </div>
-                                                                        <button
-                                                                            onClick={() => openMessageModal(resident)}
-                                                                            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-                                                                        >
-                                                                            <MessageCircle className="w-4 h-4" />
-                                                                            Send Message
-                                                                        </button>
+                                                                        {canMessageResident(resident) && (
+                                                                            <button
+                                                                                onClick={() => openMessageModal(resident)}
+                                                                                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                                                                            >
+                                                                                <MessageCircle className="w-4 h-4" />
+                                                                                Send Message
+                                                                            </button>
+                                                                        )}
                                                                     </div>
                                                                 ))}
                                                             </div>
@@ -772,25 +992,48 @@
                                                                                 {units.map(resident => (
                                                                                     <div 
                                                                                         key={resident.id} 
-                                                                                        className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-lg p-3 hover:shadow-md transition-all cursor-pointer group"
-                                                                                        onClick={() => openMessageModal(resident)}
+                                                                                        className={`${
+                                                                                            currentUser && currentUser.id === resident.id 
+                                                                                                ? 'bg-gradient-to-br from-yellow-50 to-yellow-100 border-2 border-yellow-300' 
+                                                                                                : 'bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200'
+                                                                                        } rounded-lg p-3 hover:shadow-md transition-all ${
+                                                                                            canMessageResident(resident) ? 'cursor-pointer group' : ''
+                                                                                        }`}
+                                                                                        onClick={() => canMessageResident(resident) && openMessageModal(resident)}
                                                                                     >
                                                                                         <div className="text-center">
                                                                                             <div className="flex items-center justify-center gap-1 mb-1">
-                                                                                                <User className="w-4 h-4 text-green-700" />
+                                                                                                <User className={`w-4 h-4 ${
+                                                                                                    currentUser && currentUser.id === resident.id 
+                                                                                                        ? 'text-yellow-700' 
+                                                                                                        : 'text-green-700'
+                                                                                                }`} />
                                                                                                 {resident.isOnline && (
                                                                                                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                                                                                                 )}
                                                                                             </div>
-                                                                                            <div className="font-bold text-green-800 text-xs mb-1">
+                                                                                            <div className={`font-bold text-xs mb-1 ${
+                                                                                                currentUser && currentUser.id === resident.id 
+                                                                                                    ? 'text-yellow-800' 
+                                                                                                    : 'text-green-800'
+                                                                                            }`}>
                                                                                                 Unit {resident.unitNumber}
                                                                                             </div>
-                                                                                            <div className="text-xs text-green-700 font-medium truncate">
+                                                                                            <div className={`text-xs font-medium truncate ${
+                                                                                                currentUser && currentUser.id === resident.id 
+                                                                                                    ? 'text-yellow-700' 
+                                                                                                    : 'text-green-700'
+                                                                                            }`}>
                                                                                                 {resident.name}
+                                                                                                {currentUser && currentUser.id === resident.id && (
+                                                                                                    <span className="block text-xs text-yellow-600">(You)</span>
+                                                                                                )}
                                                                                             </div>
-                                                                                            <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                                                <MessageCircle className="w-3 h-3 mx-auto text-green-600" />
-                                                                                            </div>
+                                                                                            {canMessageResident(resident) && (
+                                                                                                <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                                                    <MessageCircle className="w-3 h-3 mx-auto text-green-600" />
+                                                                                                </div>
+                                                                                            )}
                                                                                         </div>
                                                                                     </div>
                                                                                 ))}
@@ -821,6 +1064,13 @@
                             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                                 <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
                                     <h2 className="text-2xl font-bold text-gray-800 mb-6">Add New Resident</h2>
+                                    
+                                    {error && (
+                                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                                            <p className="text-sm text-red-800">{error}</p>
+                                        </div>
+                                    )}
+                                    
                                     <div className="space-y-4">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
@@ -882,12 +1132,16 @@
                                         <div className="flex gap-4 pt-4">
                                             <button
                                                 onClick={handleRegistration}
-                                                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                                                disabled={loading}
+                                                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                             >
-                                                Add Resident
+                                                {loading ? 'Adding...' : 'Add Resident'}
                                             </button>
                                             <button
-                                                onClick={() => setShowRegistrationForm(false)}
+                                                onClick={() => {
+                                                    setShowRegistrationForm(false);
+                                                    setError('');
+                                                }}
                                                 className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
                                             >
                                                 Cancel
@@ -903,6 +1157,13 @@
                             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                                 <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
                                     <h2 className="text-2xl font-bold text-gray-800 mb-4">Send Message</h2>
+                                    
+                                    {error && (
+                                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                                            <p className="text-sm text-red-800">{error}</p>
+                                        </div>
+                                    )}
+                                    
                                     <div className="bg-gray-50 p-4 rounded-lg mb-4">
                                         <p className="font-semibold text-gray-800">{messageRecipient.name}</p>
                                         <p className="text-sm text-gray-600">
@@ -921,16 +1182,18 @@
                                     <div className="flex gap-4">
                                         <button
                                             onClick={handleSendMessage}
-                                            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                                            disabled={loading || !messageText.trim()}
+                                            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                                         >
                                             <Send className="w-4 h-4" />
-                                            Send Message
+                                            {loading ? 'Sending...' : 'Send Message'}
                                         </button>
                                         <button
                                             onClick={() => {
                                                 setShowMessageModal(false);
                                                 setMessageRecipient(null);
                                                 setMessageText('');
+                                                setError('');
                                             }}
                                             className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
                                         >
