@@ -182,6 +182,8 @@ const firebaseConfig = {
                                     isOnline: true,
                                     lastSeen: firebase.firestore.FieldValue.serverTimestamp()
                                 });
+                                
+                                console.log('Current user loaded:', userData);
                             }
                         } catch (error) {
                             console.error('Error fetching user data:', error);
@@ -847,70 +849,94 @@ const firebaseConfig = {
                                 </div>
                             </div>
 
-                            {residents.length > 0 && (
-                                <div className="mb-6">
-                                    <div className="flex flex-wrap gap-4 mb-4">
-                                        <select
-                                            value={selectedZone}
-                                            onChange={(e) => {
-                                                setSelectedZone(e.target.value);
-                                                setSelectedBuilding('');
-                                            }}
-                                            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        >
-                                            <option value="">All Zones</option>
-                                            {getUniqueZones().map(zone => (
-                                                <option key={zone} value={zone}>Zone {zone}</option>
-                                            ))}
-                                        </select>
-                                        
-                                        <select
-                                            value={selectedBuilding}
-                                            onChange={(e) => setSelectedBuilding(e.target.value)}
-                                            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        >
-                                            <option value="">All Buildings</option>
-                                            {selectedZone ? (
-                                                getUniqueBuildingsInZone(selectedZone).map(building => (
-                                                    <option key={building} value={building}>Building {building}</option>
-                                                ))
-                                            ) : (
-                                                getAllUniqueBuildings().map(building => {
-                                                    const [zone, buildingId] = building.split('-');
-                                                    return (
-                                                        <option key={building} value={buildingId}>Zone {zone} - Building {buildingId}</option>
-                                                    );
-                                                })
-                                            )}
-                                        </select>
+                            {/* Always show filters and view options */}
+                            <div className="mb-6">
+                                <div className="flex flex-wrap gap-4 mb-4">
+                                    <select
+                                        value={selectedZone}
+                                        onChange={(e) => {
+                                            setSelectedZone(e.target.value);
+                                            setSelectedBuilding('');
+                                        }}
+                                        className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <option value="">All Zones</option>
+                                        {getUniqueZones().map(zone => (
+                                            <option key={zone} value={zone}>Zone {zone}</option>
+                                        ))}
+                                    </select>
+                                    
+                                    <select
+                                        value={selectedBuilding}
+                                        onChange={(e) => setSelectedBuilding(e.target.value)}
+                                        className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <option value="">All Buildings</option>
+                                        {selectedZone ? (
+                                            getUniqueBuildingsInZone(selectedZone).map(building => (
+                                                <option key={building} value={building}>Building {building}</option>
+                                            ))
+                                        ) : (
+                                            getAllUniqueBuildings().map(building => {
+                                                const [zone, buildingId] = building.split('-');
+                                                return (
+                                                    <option key={building} value={buildingId}>Zone {zone} - Building {buildingId}</option>
+                                                );
+                                            })
+                                        )}
+                                    </select>
 
-                                        <div className="flex bg-gray-200 rounded-lg p-1">
-                                            <button
-                                                onClick={() => setViewMode('list')}
-                                                className={`px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${
-                                                    viewMode === 'list' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
-                                                }`}
-                                            >
-                                                <List className="w-4 h-4" />
-                                                List View
-                                            </button>
-                                            <button
-                                                onClick={() => setViewMode('visual')}
-                                                className={`px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${
-                                                    viewMode === 'visual' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
-                                                }`}
-                                            >
-                                                <Grid className="w-4 h-4" />
-                                                Building View
-                                            </button>
-                                        </div>
+                                    <div className="flex bg-gray-200 rounded-lg p-1">
+                                        <button
+                                            onClick={() => setViewMode('list')}
+                                            className={`px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${
+                                                viewMode === 'list' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
+                                            }`}
+                                        >
+                                            <List className="w-4 h-4" />
+                                            List View
+                                        </button>
+                                        <button
+                                            onClick={() => setViewMode('visual')}
+                                            className={`px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${
+                                                viewMode === 'visual' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
+                                            }`}
+                                        >
+                                            <Grid className="w-4 h-4" />
+                                            Building View
+                                        </button>
                                     </div>
                                 </div>
-                            )}
+                            </div>
                         </div>
 
                         {/* Residents Content */}
                         <div className="space-y-6">
+                            {/* Debug Section - Remove this after testing */}
+                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                <h3 className="font-semibold text-yellow-800 mb-2">Debug Info:</h3>
+                                <p className="text-sm text-yellow-700">Residents array length: {residents.length}</p>
+                                <p className="text-sm text-yellow-700">Current user: {currentUser ? currentUser.name : 'None'}</p>
+                                <button
+                                    onClick={() => {
+                                        console.log('Current residents:', residents);
+                                        console.log('Current user:', currentUser);
+                                        // Force reload residents
+                                        if (currentUser) {
+                                            db.collection('users').get().then(snapshot => {
+                                                console.log('Manual fetch - documents found:', snapshot.docs.length);
+                                                snapshot.docs.forEach(doc => {
+                                                    console.log('Document:', doc.id, doc.data());
+                                                });
+                                            });
+                                        }
+                                    }}
+                                    className="mt-2 bg-yellow-600 text-white px-3 py-1 rounded text-sm"
+                                >
+                                    Debug Data
+                                </button>
+                            </div>
+
                             {residents.length === 0 ? (
                                 <div className="bg-white rounded-xl shadow-lg p-12 text-center">
                                     <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
