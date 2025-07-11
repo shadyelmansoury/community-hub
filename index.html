@@ -502,7 +502,12 @@ const firebaseConfig = {
                 }
             };
 
-            const openMessageModal = (resident) => {
+            const openMessageModal = (resident, event) => {
+                if (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                
                 if (!currentUser) {
                     setError('Please sign in first to send messages');
                     return;
@@ -512,6 +517,7 @@ const firebaseConfig = {
                     return;
                 }
                 
+                console.log('Opening message modal for:', resident.name);
                 setMessageRecipient(resident);
                 setShowMessageModal(true);
                 setError('');
@@ -1018,7 +1024,8 @@ const firebaseConfig = {
                                                                         </div>
                                                                         {canMessageResident(resident) && (
                                                                             <button
-                                                                                onClick={() => openMessageModal(resident)}
+                                                                                type="button"
+                                                                                onClick={(e) => openMessageModal(resident, e)}
                                                                                 className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
                                                                             >
                                                                                 <MessageCircle className="w-4 h-4" />
@@ -1082,7 +1089,7 @@ const firebaseConfig = {
                                                                                         } rounded-lg p-3 hover:shadow-md transition-all ${
                                                                                             canMessageResident(resident) ? 'cursor-pointer group' : ''
                                                                                         }`}
-                                                                                        onClick={() => canMessageResident(resident) && openMessageModal(resident)}
+                                                                                        onClick={(e) => canMessageResident(resident) && openMessageModal(resident, e)}
                                                                                     >
                                                                                         <div className="text-center">
                                                                                             <div className="flex items-center justify-center gap-1 mb-1">
@@ -1292,8 +1299,15 @@ const firebaseConfig = {
 
                         {/* Message Modal */}
                         {showMessageModal && messageRecipient && (
-                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                                <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={(e) => {
+                                if (e.target === e.currentTarget) {
+                                    setShowMessageModal(false);
+                                    setMessageRecipient(null);
+                                    setMessageText('');
+                                    setError('');
+                                }
+                            }}>
+                                <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
                                     <h2 className="text-2xl font-bold text-gray-800 mb-4">Send Message</h2>
                                     
                                     {error && (
@@ -1319,7 +1333,11 @@ const firebaseConfig = {
                                     </div>
                                     <div className="flex gap-4">
                                         <button
-                                            onClick={handleSendMessage}
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                handleSendMessage();
+                                            }}
                                             disabled={loading || !messageText.trim()}
                                             className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                                         >
@@ -1327,7 +1345,9 @@ const firebaseConfig = {
                                             {loading ? 'Sending...' : 'Send Message'}
                                         </button>
                                         <button
-                                            onClick={() => {
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.preventDefault();
                                                 setShowMessageModal(false);
                                                 setMessageRecipient(null);
                                                 setMessageText('');
