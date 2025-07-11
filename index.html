@@ -8,15 +8,34 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-    </style>
 </head>
 <body>
     <div id="root"></div>
     <script type="text/babel">
-        // Paste your entire React component code here
-        // (I'll provide the complete code in the next step)
+        // Your React component will go here
+        const { useState, useEffect } = React;
+        
+        function CommunityHub() {
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
+                    <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full">
+                        <div className="text-center">
+                            <h1 className="text-3xl font-bold text-gray-800 mb-4">Community Hub</h1>
+                            <p className="text-gray-600 mb-8">Connect with your neighbors</p>
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <p className="text-sm text-blue-800">
+                                    <strong>Demo Account:</strong><br />
+                                    Email: demo@example.com<br />
+                                    Password: demo123
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        ReactDOM.render(<CommunityHub />, document.getElementById('root'));
     </script>
 </body>
 </html>
