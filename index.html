@@ -30,6 +30,7 @@ const firebaseConfig = {
   messagingSenderId: "1007010017446",
   appId: "1:1007010017446:web:06f371a8755fb509968467"
 };
+
         // Initialize Firebase (only if not already initialized)
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
@@ -133,7 +134,7 @@ const firebaseConfig = {
             const [showRegistrationForm, setShowRegistrationForm] = useState(false);
             const [showMessageModal, setShowMessageModal] = useState(false);
             const [messageRecipient, setMessageRecipient] = useState(null);
-            const [messageText, setMessageText] = useState('');
+            const [showMessagesModal, setShowMessagesModal] = useState(false);
             
             const [authData, setAuthData] = useState({
                 email: '',
@@ -259,14 +260,23 @@ const firebaseConfig = {
             useEffect(() => {
                 if (!isFirebaseConfigured() || !currentUser) return;
 
+                console.log('Setting up messages listener for user:', currentUser.id);
+
                 const unsubscribe = db.collection('messages')
                     .where('participants', 'array-contains', currentUser.id)
                     .orderBy('timestamp', 'desc')
                     .onSnapshot((snapshot) => {
-                        const messagesData = snapshot.docs.map(doc => ({
-                            id: doc.id,
-                            ...doc.data()
-                        }));
+                        console.log('Messages snapshot received, count:', snapshot.docs.length);
+                        const messagesData = snapshot.docs.map(doc => {
+                            const data = doc.data();
+                            console.log('Message document:', doc.id, data);
+                            return {
+                                id: doc.id,
+                                ...data
+                            };
+                        });
+                        
+                        console.log('Processed messages data:', messagesData);
                         setMessages(messagesData);
                     }, (error) => {
                         console.error('Error loading messages:', error);
@@ -458,8 +468,11 @@ const firebaseConfig = {
 
                 if (!messageText.trim() || !currentUser || !messageRecipient) return;
 
+                console.log('Sending message from:', currentUser.id, 'to:', messageRecipient.id);
+                console.log('Message content:', messageText.trim());
+
                 try {
-                    await db.collection('messages').add({
+                    const messageData = {
                         fromId: currentUser.id,
                         fromName: currentUser.name,
                         toId: messageRecipient.id,
@@ -467,8 +480,15 @@ const firebaseConfig = {
                         message: messageText.trim(),
                         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                         participants: [currentUser.id, messageRecipient.id],
-                        read: false
-                    });
+                        read: false,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+
+                    console.log('Message data to be saved:', messageData);
+
+                    const docRef = await db.collection('messages').add(messageData);
+                    
+                    console.log('Message saved with ID:', docRef.id);
 
                     setMessageText('');
                     setShowMessageModal(false);
@@ -478,7 +498,7 @@ const firebaseConfig = {
 
                 } catch (error) {
                     console.error('Error sending message:', error);
-                    setError('Error sending message');
+                    setError(`Error sending message: ${error.message}`);
                 }
             };
 
@@ -840,12 +860,13 @@ const firebaseConfig = {
                                     </div>
                                     <p className="text-2xl font-bold text-green-600">{getUniqueZones().length}</p>
                                 </div>
-                                <div className="bg-purple-50 p-6 rounded-lg">
+                                <div className="bg-purple-50 p-6 rounded-lg cursor-pointer hover:bg-purple-100 transition-colors" onClick={() => setShowMessagesModal(true)}>
                                     <div className="flex items-center gap-2 mb-2">
                                         <MessageCircle className="text-purple-600 w-5 h-5" />
                                         <h3 className="font-semibold text-gray-800">Your Messages</h3>
                                     </div>
-                                    <p className="text-2xl font-bold text-purple-600">{messages.filter(m => m.toId === currentUser?.id).length}</p>
+                                    <p className="text-2xl font-bold text-purple-600">{messages.length}</p>
+                                    <p className="text-xs text-purple-600 mt-1">Click to view messages</p>
                                 </div>
                             </div>
 
@@ -1209,6 +1230,61 @@ const firebaseConfig = {
                                                 Cancel
                                             </button>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Messages View Modal */}
+                        {showMessagesModal && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                                <div className="bg-white rounded-xl p-8 max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h2 className="text-2xl font-bold text-gray-800">Your Messages</h2>
+                                        <button
+                                            onClick={() => setShowMessagesModal(false)}
+                                            className="text-gray-500 hover:text-gray-700"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                    
+                                    {messages.length === 0 ? (
+                                        <div className="text-center py-8">
+                                            <MessageCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                                            <p className="text-gray-600">No messages yet</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            {messages.map(message => (
+                                                <div key={message.id} className="border border-gray-200 rounded-lg p-4">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <User className="w-4 h-4 text-gray-600" />
+                                                            <span className="font-semibold text-gray-800">
+                                                                {message.fromId === currentUser.id ? `To: ${message.toName}` : `From: ${message.fromName}`}
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-xs text-gray-500">
+                                                            {message.timestamp?.toDate ? message.timestamp.toDate().toLocaleString() : 'Just now'}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-gray-700">{message.message}</p>
+                                                    <div className="mt-2 text-xs text-gray-500">
+                                                        {message.fromId === currentUser.id ? 'Sent' : 'Received'}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                    
+                                    <div className="mt-6 text-center">
+                                        <button
+                                            onClick={() => setShowMessagesModal(false)}
+                                            className="bg-gray-300 text-gray-700 py-2 px-6 rounded-lg hover:bg-gray-400 transition-colors"
+                                        >
+                                            Close
+                                        </button>
                                     </div>
                                 </div>
                             </div>
