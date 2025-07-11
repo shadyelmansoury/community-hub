@@ -22,14 +22,14 @@
         const { useState, useEffect } = React;
 
         // Firebase Configuration - Replace with your actual Firebase config
- const firebaseConfig = {
-  apiKey: "AIzaSyCBN6opABavXAJCvCnRvghYU4E0faOM7ng",
-  authDomain: "community-hub-saltproject.firebaseapp.com",
-  projectId: "community-hub-saltproject",
-  storageBucket: "community-hub-saltproject.firebasestorage.app",
-  messagingSenderId: "1007010017446",
-  appId: "1:1007010017446:web:06f371a8755fb509968467"
-};
+        const firebaseConfig = {
+            apiKey: "YOUR_ACTUAL_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
 
         // Initialize Firebase (only if not already initialized)
         if (!firebase.apps.length) {
@@ -198,10 +198,10 @@
                 return () => unsubscribe();
             }, []);
 
-            // Load residents from Firestore
+            // Test Firebase connection and load residents
             useEffect(() => {
                 if (!isFirebaseConfigured()) {
-                    // Load demo data for offline mode
+                    console.log('Firebase not configured, loading demo data');
                     const demoUsers = [
                         { 
                             id: 'demo1', 
@@ -219,21 +219,36 @@
                     return;
                 }
 
+                console.log('Testing Firebase connection...');
+                console.log('Firebase project ID:', firebaseConfig.projectId);
+                
+                // Load users without ordering to avoid index requirement
                 const unsubscribe = db.collection('users')
-                    .orderBy('zoneId')
-                    .orderBy('buildingId')
-                    .orderBy('unitNumber')
                     .onSnapshot((snapshot) => {
-                        const residentsData = snapshot.docs.map(doc => ({
-                            id: doc.id,
-                            ...doc.data()
-                        }));
+                        console.log('Real-time snapshot received');
+                        console.log('Number of documents:', snapshot.docs.length);
+                        
+                        const residentsData = snapshot.docs.map(doc => {
+                            console.log('Document:', doc.id, doc.data());
+                            return {
+                                id: doc.id,
+                                ...doc.data()
+                            };
+                        });
+                        
+                        // Sort the data in JavaScript instead of Firestore
+                        residentsData.sort((a, b) => {
+                            if (a.zoneId !== b.zoneId) return a.zoneId.localeCompare(b.zoneId);
+                            if (a.buildingId !== b.buildingId) return a.buildingId.localeCompare(b.buildingId);
+                            return parseInt(a.unitNumber) - parseInt(b.unitNumber);
+                        });
+                        
+                        console.log('Final residents data:', residentsData);
                         setResidents(residentsData);
                         setError(''); // Clear any previous errors
                     }, (error) => {
-                        console.error('Error loading residents:', error);
-                        // For residents, we still want to show an error since it's core functionality
-                        setError('Error loading residents data. Please refresh the page.');
+                        console.error('Real-time listener error:', error);
+                        setError(`Firestore Listener Error: ${error.message}`);
                     });
 
                 return () => unsubscribe();
@@ -599,6 +614,25 @@
                             {error && (
                                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
                                     <p className="text-sm text-red-800">{error}</p>
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                console.log('Testing manual Firestore write...');
+                                                await db.collection('test').doc('testDoc').set({
+                                                    message: 'Test document',
+                                                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                                                });
+                                                console.log('Manual write successful!');
+                                                setError('Manual write test successful! Check console for details.');
+                                            } catch (err) {
+                                                console.error('Manual write failed:', err);
+                                                setError(`Manual write failed: ${err.message}`);
+                                            }
+                                        }}
+                                        className="mt-2 bg-blue-600 text-white px-4 py-2 rounded text-sm"
+                                    >
+                                        Test Firestore Connection
+                                    </button>
                                 </div>
                             )}
 
