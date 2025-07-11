@@ -1,563 +1,4 @@
-setMessageRecipient(resident);
-                setShowMessageModal(true);
-            };
-
-            const TabButton = ({ id, label, icon: Icon, count }) => (
-                <button
-                <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Community Hub</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-    </style>
-</head>
-<body>
-    <div id="root"></div>
-    <script type="text/babel">
-        const { useState, useEffect } = React;
-
-        // Lucide React icons (simplified versions)
-        const Users = ({ className = "w-4 h-4" }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-            </svg>
-        );
-
-        const MessageCircle = ({ className = "w-4 h-4" }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-        );
-
-        const Plus = ({ className = "w-4 h-4" }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-        );
-
-        const Building = ({ className = "w-4 h-4" }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-        );
-
-        const User = ({ className = "w-4 h-4" }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-        );
-
-        const Send = ({ className = "w-4 h-4" }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-            </svg>
-        );
-
-        const LogOut = ({ className = "w-4 h-4" }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-        );
-
-        const LogIn = ({ className = "w-4 h-4" }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-            </svg>
-        );
-
-        const UserPlus = ({ className = "w-4 h-4" }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-            </svg>
-        );
-
-        const Grid = ({ className = "w-4 h-4" }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-            </svg>
-        );
-
-        const List = ({ className = "w-4 h-4" }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-            </svg>
-        );
-
-        const Eye = ({ className = "w-4 h-4" }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-        );
-
-        const Calendar = ({ className = "w-4 h-4" }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-        );
-
-        const Bell = ({ className = "w-4 h-4" }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5-5-5h5v-13a1 1 0 011-1h3a1 1 0 011 1v13z" />
-            </svg>
-        );
-
-        const Star = ({ className = "w-4 h-4" }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-            </svg>
-        );
-
-        const Clock = ({ className = "w-4 h-4" }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-        );
-
-        const MapPin = ({ className = "w-4 h-4" }) => (
-            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-        );
-
-        function CommunityHub() {
-            const [residents, setResidents] = useState([]);
-            const [users, setUsers] = useState([]);
-            const [events, setEvents] = useState([]);
-            const [announcements, setAnnouncements] = useState([]);
-            const [messages, setMessages] = useState([]);
-            const [selectedBuilding, setSelectedBuilding] = useState('');
-            const [selectedZone, setSelectedZone] = useState('');
-            const [viewMode, setViewMode] = useState('list');
-            const [activeTab, setActiveTab] = useState('residents');
-            const [currentUser, setCurrentUser] = useState(null);
-            const [isAuthenticated, setIsAuthenticated] = useState(false);
-            const [authMode, setAuthMode] = useState('signin');
-            
-            const [showRegistrationForm, setShowRegistrationForm] = useState(false);
-            const [showMessageModal, setShowMessageModal] = useState(false);
-            const [showEventForm, setShowEventForm] = useState(false);
-            const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
-            const [messageRecipient, setMessageRecipient] = useState(null);
-            const [messageText, setMessageText] = useState('');
-            
-            const [authData, setAuthData] = useState({
-                email: '',
-                password: '',
-                confirmPassword: '',
-                name: '',
-                zoneId: '',
-                buildingId: '',
-                unitNumber: '',
-                phone: ''
-            });
-            
-            const [formData, setFormData] = useState({
-                name: '',
-                zoneId: '',
-                buildingId: '',
-                unitNumber: '',
-                email: '',
-                phone: ''
-            });
-
-            const [eventData, setEventData] = useState({
-                title: '',
-                description: '',
-                date: '',
-                time: '',
-                location: '',
-                maxAttendees: '',
-                zoneId: '',
-                buildingId: ''
-            });
-
-            const [announcementData, setAnnouncementData] = useState({
-                title: '',
-                message: '',
-                priority: 'normal',
-                zoneId: '',
-                buildingId: ''
-            });
-
-            useEffect(() => {
-                const savedUsers = JSON.parse(localStorage.getItem('neighborApp_users') || '[]');
-                const savedResidents = JSON.parse(localStorage.getItem('neighborApp_residents') || '[]');
-                const savedEvents = JSON.parse(localStorage.getItem('neighborApp_events') || '[]');
-                const savedAnnouncements = JSON.parse(localStorage.getItem('neighborApp_announcements') || '[]');
-                const savedMessages = JSON.parse(localStorage.getItem('neighborApp_messages') || '[]');
-                const savedCurrentUser = localStorage.getItem('neighborApp_currentUser');
-
-                if (savedUsers.length === 0) {
-                    const demoUsers = [
-                        { 
-                            id: 1, 
-                            email: 'demo@example.com', 
-                            password: 'demo123', 
-                            name: 'Demo User', 
-                            zoneId: 'A', 
-                            buildingId: '1', 
-                            unitNumber: '101', 
-                            phone: '555-0123', 
-                            joinedDate: '2025-01-01', 
-                            isOnline: false 
-                        }
-                    ];
-                    setUsers(demoUsers);
-                    setResidents(demoUsers);
-                    localStorage.setItem('neighborApp_users', JSON.stringify(demoUsers));
-                    localStorage.setItem('neighborApp_residents', JSON.stringify(demoUsers));
-                } else {
-                    setUsers(savedUsers);
-                    setResidents(savedResidents);
-                    setEvents(savedEvents);
-                    setAnnouncements(savedAnnouncements);
-                    setMessages(savedMessages);
-                }
-                
-                if (savedCurrentUser) {
-                    const user = JSON.parse(savedCurrentUser);
-                    setCurrentUser(user);
-                    setIsAuthenticated(true);
-                }
-            }, []);
-
-            const saveToStorage = (key, data) => {
-                localStorage.setItem(key, JSON.stringify(data));
-            };
-
-            const handleSignUp = () => {
-                const { email, password, confirmPassword, name, zoneId, buildingId, unitNumber, phone } = authData;
-                
-                if (!email || !password || !name || !zoneId || !buildingId || !unitNumber) {
-                    alert('Please fill in all required fields');
-                    return;
-                }
-                
-                if (password !== confirmPassword) {
-                    alert('Passwords do not match');
-                    return;
-                }
-                
-                if (users.find(user => user.email === email)) {
-                    alert('Email already exists');
-                    return;
-                }
-                
-                if (residents.find(resident => 
-                    resident.zoneId === zoneId && 
-                    resident.buildingId === buildingId && 
-                    resident.unitNumber === unitNumber
-                )) {
-                    alert('This unit is already registered');
-                    return;
-                }
-
-                const newUser = {
-                    id: Date.now(),
-                    email,
-                    password,
-                    name,
-                    zoneId,
-                    buildingId,
-                    unitNumber,
-                    phone,
-                    joinedDate: new Date().toLocaleDateString(),
-                    isOnline: true
-                };
-
-                const updatedUsers = [...users, newUser];
-                const updatedResidents = [...residents, newUser];
-                
-                setUsers(updatedUsers);
-                setResidents(updatedResidents);
-                setCurrentUser(newUser);
-                setIsAuthenticated(true);
-                
-                saveToStorage('neighborApp_users', updatedUsers);
-                saveToStorage('neighborApp_residents', updatedResidents);
-                saveToStorage('neighborApp_currentUser', newUser);
-                
-                setAuthData({
-                    email: '',
-                    password: '',
-                    confirmPassword: '',
-                    name: '',
-                    zoneId: '',
-                    buildingId: '',
-                    unitNumber: '',
-                    phone: ''
-                });
-            };
-
-            const handleSignIn = () => {
-                const { email, password } = authData;
-                
-                if (!email || !password) {
-                    alert('Please enter email and password');
-                    return;
-                }
-
-                const user = users.find(u => u.email === email && u.password === password);
-                
-                if (!user) {
-                    alert('Invalid email or password');
-                    return;
-                }
-
-                const updatedUser = { ...user, isOnline: true };
-                const updatedUsers = users.map(u => u.id === user.id ? updatedUser : u);
-                const updatedResidents = residents.map(r => r.id === user.id ? updatedUser : r);
-                
-                setUsers(updatedUsers);
-                setResidents(updatedResidents);
-                setCurrentUser(updatedUser);
-                setIsAuthenticated(true);
-                
-                saveToStorage('neighborApp_users', updatedUsers);
-                saveToStorage('neighborApp_residents', updatedResidents);
-                saveToStorage('neighborApp_currentUser', updatedUser);
-                
-                setAuthData({ email: '', password: '', confirmPassword: '', name: '', zoneId: '', buildingId: '', unitNumber: '', phone: '' });
-            };
-
-            const handleSignOut = () => {
-                if (currentUser) {
-                    const updatedUsers = users.map(u => 
-                        u.id === currentUser.id ? { ...u, isOnline: false } : u
-                    );
-                    const updatedResidents = residents.map(r => 
-                        r.id === currentUser.id ? { ...r, isOnline: false } : r
-                    );
-                    
-                    setUsers(updatedUsers);
-                    setResidents(updatedResidents);
-                    saveToStorage('neighborApp_users', updatedUsers);
-                    saveToStorage('neighborApp_residents', updatedResidents);
-                }
-                
-                setCurrentUser(null);
-                setIsAuthenticated(false);
-                localStorage.removeItem('neighborApp_currentUser');
-            };
-
-            const handleRegistration = () => {
-                if (formData.name && formData.zoneId && formData.buildingId && formData.unitNumber) {
-                    if (residents.find(r => 
-                        r.zoneId === formData.zoneId && 
-                        r.buildingId === formData.buildingId && 
-                        r.unitNumber === formData.unitNumber
-                    )) {
-                        alert('This unit is already registered');
-                        return;
-                    }
-
-                    const newResident = {
-                        id: Date.now(),
-                        ...formData,
-                        joinedDate: new Date().toLocaleDateString(),
-                        isOnline: true,
-                        email: formData.email || currentUser?.email,
-                        registeredBy: currentUser?.name
-                    };
-                    
-                    const updatedResidents = [...residents, newResident];
-                    setResidents(updatedResidents);
-                    saveToStorage('neighborApp_residents', updatedResidents);
-                    
-                    setFormData({ name: '', zoneId: '', buildingId: '', unitNumber: '', email: '', phone: '' });
-                    setShowRegistrationForm(false);
-                }
-            };
-
-            const handleCreateEvent = () => {
-                if (eventData.title && eventData.date && eventData.time && currentUser) {
-                    const newEvent = {
-                        id: Date.now(),
-                        ...eventData,
-                        createdBy: currentUser.name,
-                        createdAt: new Date().toLocaleDateString(),
-                        attendees: [],
-                        status: 'upcoming'
-                    };
-                    
-                    const updatedEvents = [...events, newEvent];
-                    setEvents(updatedEvents);
-                    saveToStorage('neighborApp_events', updatedEvents);
-                    
-                    setEventData({ title: '', description: '', date: '', time: '', location: '', maxAttendees: '', zoneId: '', buildingId: '' });
-                    setShowEventForm(false);
-                }
-            };
-
-            const handleCreateAnnouncement = () => {
-                if (announcementData.title && announcementData.message && currentUser) {
-                    const newAnnouncement = {
-                        id: Date.now(),
-                        ...announcementData,
-                        createdBy: currentUser.name,
-                        createdAt: new Date().toLocaleDateString(),
-                        timestamp: new Date().toLocaleString()
-                    };
-                    
-                    const updatedAnnouncements = [...announcements, newAnnouncement];
-                    setAnnouncements(updatedAnnouncements);
-                    saveToStorage('neighborApp_announcements', updatedAnnouncements);
-                    
-                    setAnnouncementData({ title: '', message: '', priority: 'normal', zoneId: '', buildingId: '' });
-                    setShowAnnouncementForm(false);
-                }
-            };
-
-            const joinEvent = (eventId) => {
-                if (!currentUser) return;
-                
-                const updatedEvents = events.map(event => {
-                    if (event.id === eventId) {
-                        const isAlreadyJoined = event.attendees.some(attendee => attendee.id === currentUser.id);
-                        if (!isAlreadyJoined) {
-                            return {
-                                ...event,
-                                attendees: [...event.attendees, currentUser]
-                            };
-                        }
-                    }
-                    return event;
-                });
-                
-                setEvents(updatedEvents);
-                saveToStorage('neighborApp_events', updatedEvents);
-            };
-
-            const getRelevantEvents = () => {
-                if (!selectedZone && !selectedBuilding) return events;
-                return events.filter(event => {
-                    if (selectedZone && event.zoneId && event.zoneId !== selectedZone) return false;
-                    if (selectedBuilding && event.buildingId && event.buildingId !== selectedBuilding) return false;
-                    return true;
-                });
-            };
-
-            const getRelevantAnnouncements = () => {
-                if (!selectedZone && !selectedBuilding) return announcements;
-                return announcements.filter(announcement => {
-                    if (selectedZone && announcement.zoneId && announcement.zoneId !== selectedZone) return false;
-                    if (selectedBuilding && announcement.buildingId && announcement.buildingId !== selectedBuilding) return false;
-                    return true;
-                });
-            };
-
-            const getUniqueZones = () => {
-                return [...new Set(residents.map(r => r.zoneId))].sort();
-            };
-
-            const getUniqueBuildingsInZone = (zoneId) => {
-                return [...new Set(residents.filter(r => r.zoneId === zoneId).map(r => r.buildingId))].sort();
-            };
-
-            const getAllUniqueBuildings = () => {
-                return [...new Set(residents.map(r => `${r.zoneId}-${r.buildingId}`))].sort();
-            };
-
-            const getResidentsInBuilding = (zoneId, buildingId) => {
-                return residents.filter(r => r.zoneId === zoneId && r.buildingId === buildingId)
-                    .sort((a, b) => parseInt(a.unitNumber) - parseInt(b.unitNumber));
-            };
-
-            const generateBuildingLayout = (buildingResidents) => {
-                if (buildingResidents.length === 0) return [];
-                
-                const unitsPerFloor = new Map();
-                
-                buildingResidents.forEach(resident => {
-                    const unitNum = parseInt(resident.unitNumber);
-                    const floor = Math.floor(unitNum / 100);
-                    const unitOnFloor = unitNum % 100;
-                    
-                    if (!unitsPerFloor.has(floor)) {
-                        unitsPerFloor.set(floor, []);
-                    }
-                    unitsPerFloor.get(floor).push({ ...resident, unitOnFloor, originalUnit: unitNum });
-                });
-                
-                const sortedFloors = Array.from(unitsPerFloor.keys()).sort((a, b) => b - a);
-                
-                return sortedFloors.map(floor => ({
-                    floor,
-                    units: unitsPerFloor.get(floor).sort((a, b) => a.unitOnFloor - b.unitOnFloor)
-                }));
-            };
-
-            const handleSendMessage = () => {
-                if (messageText.trim() && currentUser) {
-                    const newMessage = {
-                        id: Date.now(),
-                        from: currentUser,
-                        to: messageRecipient,
-                        message: messageText,
-                        timestamp: new Date().toLocaleString(),
-                        read: false
-                    };
-                    
-                    const updatedMessages = [...messages, newMessage];
-                    setMessages(updatedMessages);
-                    saveToStorage('neighborApp_messages', updatedMessages);
-                    
-                    setMessageText('');
-                    setShowMessageModal(false);
-                    setMessageRecipient(null);
-                    alert(`Message sent to ${messageRecipient.name}!`);
-                }
-            };
-
-            const openMessageModal = (resident) => {
-                if (!currentUser) {
-                    alert('Please sign in first to send messages');
-                    return;
-                }
-                setMessageRecipient(resident);
-                setShowMessageModal(true);
-            };
-
-            if (!isAuthenticated) {
-                return (
-                    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
-                        <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full">
-                            <div className="text-center mb-8">
-                                <Building className="w-16 h-16 text-blue-600 mx-auto mb-4" />
-                                <h1 className="text-3xl font-bold text-gray-800 mb-2">Community Hub</h1>
-                                <p className="text-gray-600">Connect with your neighbors</p>
-                            </div>
-
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                                <p className="text-sm text-blue-800">
-                                    <strong>Demo Account:</strong><br />
-                                    Email: demo@example.com<br />
-                                    Password: demo123
-                                </p>
-                            </div>
-
-                            <div className="flex bg-gray-100 rounded-lg p-1 mb-6">
-                                <button
-                                    onClick={() => setAuthMode('signin')}
-                                    className={`flex-1 py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2 ${
-                                        authMode === 'signin' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
-                                    }`}
-                                >
-                                    <LogIn className="w-4 h-4" />
-                                    Sign In
-                                </button>
-                                <button
-                                    onClick={() => setAuthMode('signup')}
-                                    className={`flex-1 py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2 ${
+className={`flex-1 py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2 ${
                                         authMode === 'signup' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
                                     }`}
                                 >
@@ -678,9 +119,11 @@ setMessageRecipient(resident);
                 );
             }
 
+            // Main App Interface
             return (
                 <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
                     <div className="max-w-7xl mx-auto">
+                        {/* Header */}
                         <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-3">
@@ -714,7 +157,8 @@ setMessageRecipient(resident);
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            {/* Dashboard Stats */}
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                                 <div className="bg-blue-50 p-6 rounded-lg">
                                     <div className="flex items-center gap-2 mb-2">
                                         <Users className="text-blue-600 w-5 h-5" />
@@ -724,21 +168,37 @@ setMessageRecipient(resident);
                                 </div>
                                 <div className="bg-green-50 p-6 rounded-lg">
                                     <div className="flex items-center gap-2 mb-2">
-                                        <Building className="text-green-600 w-5 h-5" />
-                                        <h3 className="font-semibold text-gray-800">Active Zones</h3>
+                                        <Calendar className="text-green-600 w-5 h-5" />
+                                        <h3 className="font-semibold text-gray-800">Upcoming Events</h3>
                                     </div>
-                                    <p className="text-2xl font-bold text-green-600">{getUniqueZones().length}</p>
+                                    <p className="text-2xl font-bold text-green-600">{events.filter(e => e.status === 'upcoming').length}</p>
                                 </div>
                                 <div className="bg-purple-50 p-6 rounded-lg">
                                     <div className="flex items-center gap-2 mb-2">
-                                        <MessageCircle className="text-purple-600 w-5 h-5" />
+                                        <Bell className="text-purple-600 w-5 h-5" />
+                                        <h3 className="font-semibold text-gray-800">Announcements</h3>
+                                    </div>
+                                    <p className="text-2xl font-bold text-purple-600">{announcements.length}</p>
+                                </div>
+                                <div className="bg-orange-50 p-6 rounded-lg">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <MessageCircle className="text-orange-600 w-5 h-5" />
                                         <h3 className="font-semibold text-gray-800">Your Messages</h3>
                                     </div>
-                                    <p className="text-2xl font-bold text-purple-600">{messages.filter(m => m.to?.id === currentUser?.id).length}</p>
+                                    <p className="text-2xl font-bold text-orange-600">{messages.filter(m => m.to?.id === currentUser?.id).length}</p>
                                 </div>
                             </div>
 
-                            {residents.length > 0 && (
+                            {/* Tab Navigation */}
+                            <div className="flex flex-wrap gap-2 mb-6">
+                                <TabButton id="residents" label="Residents" icon={Users} count={residents.length} />
+                                <TabButton id="events" label="Events" icon={Calendar} count={events.length} />
+                                <TabButton id="announcements" label="Announcements" icon={Bell} count={announcements.length} />
+                                <TabButton id="messages" label="Messages" icon={MessageCircle} count={messages.filter(m => m.to?.id === currentUser?.id).length} />
+                            </div>
+
+                            {/* Filters for Residents Tab */}
+                            {residents.length > 0 && activeTab === 'residents' && (
                                 <div className="mb-6">
                                     <div className="flex flex-wrap gap-4 mb-4">
                                         <select
@@ -800,164 +260,116 @@ setMessageRecipient(resident);
                             )}
                         </div>
 
-                        {/* Residents Content */}
-                        <div className="space-y-6">
-                            {residents.length === 0 ? (
-                                <div className="bg-white rounded-xl shadow-lg p-12 text-center">
-                                    <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                                    <h3 className="text-xl font-semibold text-gray-600 mb-2">No Residents Registered Yet</h3>
-                                    <p className="text-gray-500 mb-6">Add the first resident to start building your community!</p>
-                                    <button
-                                        onClick={() => setShowRegistrationForm(true)}
-                                        className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-                                    >
-                                        Add Resident
-                                    </button>
-                                </div>
-                            ) : viewMode === 'list' ? (
-                                /* List View */
-                                getUniqueZones().map(zoneId => {
-                                    if (selectedZone && selectedZone !== zoneId) return null;
-                                    
-                                    return (
-                                        <div key={zoneId} className="bg-white rounded-xl shadow-lg p-6">
-                                            <h2 className="text-2xl font-bold text-gray-800 mb-4">Zone {zoneId}</h2>
-                                            <div className="space-y-6">
-                                                {getUniqueBuildingsInZone(zoneId).map(buildingId => {
-                                                    if (selectedBuilding && selectedBuilding !== buildingId) return null;
-                                                    
-                                                    const buildingResidents = getResidentsInBuilding(zoneId, buildingId);
-                                                    
-                                                    return (
-                                                        <div key={buildingId} className="border border-gray-200 rounded-lg p-4">
-                                                            <h3 className="text-xl font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                                                                <Building className="w-5 h-5" />
-                                                                Building {buildingId}
-                                                            </h3>
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                                {buildingResidents.map(resident => (
-                                                                    <div key={resident.id} className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 hover:shadow-md transition-shadow">
-                                                                        <div className="flex items-start justify-between mb-3">
-                                                                            <div className="flex items-center gap-2">
-                                                                                <div className="relative">
-                                                                                    <User className="text-gray-600 w-5 h-5" />
-                                                                                    {resident.isOnline && (
-                                                                                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full"></div>
-                                                                                    )}
-                                                                                </div>
-                                                                                <span className="font-semibold text-gray-800">{resident.name}</span>
-                                                                            </div>
-                                                                            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
-                                                                                Unit {resident.unitNumber}
-                                                                            </span>
-                                                                        </div>
-                                                                        <div className="text-sm text-gray-600 mb-3">
-                                                                            <p>Zone: {resident.zoneId} • Building: {resident.buildingId}</p>
-                                                                            {resident.email && <p>Email: {resident.email}</p>}
-                                                                            {resident.phone && <p>Phone: {resident.phone}</p>}
-                                                                            <p>Joined: {resident.joinedDate}</p>
-                                                                        </div>
-                                                                        <button
-                                                                            onClick={() => openMessageModal(resident)}
-                                                                            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-                                                                        >
-                                                                            <MessageCircle className="w-4 h-4" />
-                                                                            Send Message
-                                                                        </button>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    );
-                                })
-                            ) : (
-                                /* Visual Building View */
-                                <div className="space-y-8">
-                                    {getUniqueZones().map(zoneId => {
+                        {/* Tab Content */}
+                        {activeTab === 'residents' && (
+                            <div className="space-y-6">
+                                {residents.length === 0 ? (
+                                    <div className="bg-white rounded-xl shadow-lg p-12 text-center">
+                                        <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                                        <h3 className="text-xl font-semibold text-gray-600 mb-2">No Residents Registered Yet</h3>
+                                        <p className="text-gray-500 mb-6">Add the first resident to start building your community!</p>
+                                        <button
+                                            onClick={() => setShowRegistrationForm(true)}
+                                            className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                                        >
+                                            Add Resident
+                                        </button>
+                                    </div>
+                                ) : viewMode === 'list' ? (
+                                    /* List View */
+                                    getUniqueZones().map(zoneId => {
                                         if (selectedZone && selectedZone !== zoneId) return null;
                                         
                                         return (
                                             <div key={zoneId} className="bg-white rounded-xl shadow-lg p-6">
-                                                <h2 className="text-2xl font-bold text-gray-800 mb-6">Zone {zoneId} - Building Layout</h2>
-                                                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+                                                <h2 className="text-2xl font-bold text-gray-800 mb-4">Zone {zoneId}</h2>
+                                                <div className="space-y-6">
                                                     {getUniqueBuildingsInZone(zoneId).map(buildingId => {
                                                         if (selectedBuilding && selectedBuilding !== buildingId) return null;
                                                         
                                                         const buildingResidents = getResidentsInBuilding(zoneId, buildingId);
-                                                        const buildingLayout = generateBuildingLayout(buildingResidents);
-                                                        
-                                                        if (buildingLayout.length === 0) return null;
                                                         
                                                         return (
-                                                            <div key={buildingId} className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl p-6 border-2 border-blue-200">
-                                                                <div className="text-center mb-4">
-                                                                    <h3 className="text-xl font-bold text-gray-800 flex items-center justify-center gap-2">
-                                                                        <Building className="w-6 h-6 text-blue-600" />
-                                                                        Building {buildingId}
-                                                                    </h3>
-                                                                    <p className="text-sm text-gray-600">{buildingResidents.length} residents</p>
-                                                                </div>
-                                                                
-                                                                <div className="space-y-2">
-                                                                    {buildingLayout.map(({ floor, units }) => (
-                                                                        <div key={floor} className="bg-white rounded-lg p-3 shadow-sm">
-                                                                            <div className="text-center mb-2">
-                                                                                <span className="text-sm font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded">
-                                                                                    Floor {floor}
-                                                                                </span>
-                                                                            </div>
-                                                                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-2">
-                                                                                {units.map(resident => (
-                                                                                    <div 
-                                                                                        key={resident.id} 
-                                                                                        className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-lg p-3 hover:shadow-md transition-all cursor-pointer group"
-                                                                                        onClick={() => openMessageModal(resident)}
-                                                                                    >
-                                                                                        <div className="text-center">
-                                                                                            <div className="flex items-center justify-center gap-1 mb-1">
-                                                                                                <User className="w-4 h-4 text-green-700" />
-                                                                                                {resident.isOnline && (
-                                                                                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                                                                                )}
-                                                                                            </div>
-                                                                                            <div className="font-bold text-green-800 text-xs mb-1">
-                                                                                                Unit {resident.unitNumber}
-                                                                                            </div>
-                                                                                            <div className="text-xs text-green-700 font-medium truncate">
-                                                                                                {resident.name}
-                                                                                            </div>
-                                                                                            <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                                                <MessageCircle className="w-3 h-3 mx-auto text-green-600" />
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                ))}
-                                                                            </div>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                                
-                                                                <div className="mt-4 text-center">
-                                                                    <div className="text-xs text-gray-600 bg-white rounded-full px-3 py-1 inline-block">
-                                                                        <Eye className="w-3 h-3 inline mr-1" />
-                                                                        Click any unit to message resident
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
+                                                            <div key={buildingId} className="border border-gray-200 rounded-lg p-4">
+                                                                <h3 className="text-xl font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                                                                    <Building className="w-5 h-5" />
+                                                                    Building {buildingId}
+                                                                </h3>
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                                    {buildingResidents.map(resident => (
+                                                                        <div key={resident.id} className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                                                            <div className="flex items-start justify-between mb-2">
+                                                    <h3 className="text-xl font-semibold text-gray-800">{announcement.title}</h3>
+                                                    <div className="flex items-center gap-2">
+                                                        {announcement.priority === 'high' && (
+                                                            <Star className="w-5 h-5 text-red-500" />
+                                                        )}
+                                                        <span className="text-sm text-gray-600">{announcement.timestamp}</span>
+                                                    </div>
+                                                </div>
+                                                <p className="text-gray-700 mb-3">{announcement.message}</p>
+                                                <div className="flex items-center justify-between text-sm text-gray-600">
+                                                    <span>Posted by: {announcement.createdBy}</span>
+                                                    {(announcement.zoneId || announcement.buildingId) && (
+                                                        <span>
+                                                            {announcement.zoneId && `Zone ${announcement.zoneId}`}
+                                                            {announcement.buildingId && ` • Building ${announcement.buildingId}`}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
-                                        );
-                                    })}
+                                        ))
+                                    )}
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
 
+                        {/* Messages Tab */}
+                        {activeTab === 'messages' && (
+                            <div className="bg-white rounded-xl shadow-lg p-6">
+                                <h2 className="text-2xl font-bold text-gray-800 mb-6">Your Messages</h2>
+                                {!currentUser ? (
+                                    <div className="text-center py-12">
+                                        <MessageCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                                        <h3 className="text-xl font-semibold text-gray-600 mb-2">Please Register First</h3>
+                                        <p className="text-gray-500">You need to register to view and send messages</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {messages.filter(m => m.to?.id === currentUser.id || m.from?.id === currentUser.id).length === 0 ? (
+                                            <div className="text-center py-12">
+                                                <MessageCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                                                <h3 className="text-xl font-semibold text-gray-600 mb-2">No Messages Yet</h3>
+                                                <p className="text-gray-500">Start a conversation with your neighbors!</p>
+                                            </div>
+                                        ) : (
+                                            messages.filter(m => m.to?.id === currentUser.id || m.from?.id === currentUser.id).map(message => (
+                                                <div key={message.id} className={`border rounded-lg p-4 ${
+                                                    message.to?.id === currentUser.id ? 'bg-blue-50' : 'bg-gray-50'
+                                                }`}>
+                                                    <div className="flex items-start justify-between mb-2">
+                                                        <div>
+                                                            <span className="font-semibold text-gray-800">
+                                                                {message.to?.id === currentUser.id ? `From: ${message.from.name}` : `To: ${message.to.name}`}
+                                                            </span>
+                                                            <span className="text-sm text-gray-600 ml-2">
+                                                                (Zone {message.to?.id === currentUser.id ? message.from.zoneId : message.to.zoneId} • 
+                                                                Unit {message.to?.id === currentUser.id ? message.from.unitNumber : message.to.unitNumber})
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-sm text-gray-600">{message.timestamp}</span>
+                                                    </div>
+                                                    <p className="text-gray-700">{message.message}</p>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Modals */}
+                        
                         {/* Registration Modal */}
                         {showRegistrationForm && (
                             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -1040,6 +452,191 @@ setMessageRecipient(resident);
                             </div>
                         )}
 
+                        {/* Event Creation Modal */}
+                        {showEventForm && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                                <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4 max-h-screen overflow-y-auto">
+                                    <h2 className="text-2xl font-bold text-gray-800 mb-6">Create Community Event</h2>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Event Title *</label>
+                                            <input
+                                                type="text"
+                                                value={eventData.title}
+                                                onChange={(e) => setEventData({...eventData, title: e.target.value})}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                            <textarea
+                                                value={eventData.description}
+                                                onChange={(e) => setEventData({...eventData, description: e.target.value})}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-24 resize-none"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
+                                                <input
+                                                    type="date"
+                                                    value={eventData.date}
+                                                    onChange={(e) => setEventData({...eventData, date: e.target.value})}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Time *</label>
+                                                <input
+                                                    type="time"
+                                                    value={eventData.time}
+                                                    onChange={(e) => setEventData({...eventData, time: e.target.value})}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                                            <input
+                                                type="text"
+                                                value={eventData.location}
+                                                onChange={(e) => setEventData({...eventData, location: e.target.value})}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                placeholder="e.g., Community Hall, Building A Lobby"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Max Attendees</label>
+                                            <input
+                                                type="number"
+                                                value={eventData.maxAttendees}
+                                                onChange={(e) => setEventData({...eventData, maxAttendees: e.target.value})}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                placeholder="Leave empty for unlimited"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Target Zone (Optional)</label>
+                                                <input
+                                                    type="text"
+                                                    value={eventData.zoneId}
+                                                    onChange={(e) => setEventData({...eventData, zoneId: e.target.value})}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    placeholder="Leave empty for all zones"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Target Building (Optional)</label>
+                                                <input
+                                                    type="text"
+                                                    value={eventData.buildingId}
+                                                    onChange={(e) => setEventData({...eventData, buildingId: e.target.value})}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    placeholder="Leave empty for all buildings"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-4 pt-4">
+                                            <button
+                                                onClick={handleCreateEvent}
+                                                className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
+                                            >
+                                                Create Event
+                                            </button>
+                                            <button
+                                                onClick={() => setShowEventForm(false)}
+                                                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Announcement Creation Modal */}
+                        {showAnnouncementForm && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                                <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
+                                    <h2 className="text-2xl font-bold text-gray-800 mb-6">Post Announcement</h2>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                                            <input
+                                                type="text"
+                                                value={announcementData.title}
+                                                onChange={(e) => setAnnouncementData({...announcementData, title: e.target.value})}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Message *</label>
+                                            <textarea
+                                                value={announcementData.message}
+                                                onChange={(e) => setAnnouncementData({...announcementData, message: e.target.value})}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                                            <select
+                                                value={announcementData.priority}
+                                                onChange={(e) => setAnnouncementData({...announcementData, priority: e.target.value})}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                <option value="normal">Normal</option>
+                                                <option value="medium">Medium Priority</option>
+                                                <option value="high">High Priority</option>
+                                            </select>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Target Zone (Optional)</label>
+                                                <input
+                                                    type="text"
+                                                    value={announcementData.zoneId}
+                                                    onChange={(e) => setAnnouncementData({...announcementData, zoneId: e.target.value})}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    placeholder="Leave empty for all zones"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Target Building (Optional)</label>
+                                                <input
+                                                    type="text"
+                                                    value={announcementData.buildingId}
+                                                    onChange={(e) => setAnnouncementData({...announcementData, buildingId: e.target.value})}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    placeholder="Leave empty for all buildings"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-4 pt-4">
+                                            <button
+                                                onClick={handleCreateAnnouncement}
+                                                className="flex-1 bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors"
+                                            >
+                                                Post Announcement
+                                            </button>
+                                            <button
+                                                onClick={() => setShowAnnouncementForm(false)}
+                                                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Message Modal */}
                         {showMessageModal && messageRecipient && (
                             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -1087,7 +684,822 @@ setMessageRecipient(resident);
             );
         }
 
+        // Render the app
         ReactDOM.render(<CommunityHub />, document.getElementById('root'));
     </script>
 </body>
-</html>
+</html> items-start justify-between mb-3">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <div className="relative">
+                                                                                        <User className="text-gray-600 w-5 h-5" />
+                                                                                        {resident.isOnline && (
+                                                                                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full"></div>
+                                                                                        )}
+                                                                                    </div>
+                                                                                    <span className="font-semibold text-gray-800">{resident.name}</span>
+                                                                                </div>
+                                                                                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
+                                                                                    Unit {resident.unitNumber}
+                                                                                </span>
+                                                                            </div>
+                                                                            <div className="text-sm text-gray-600 mb-3">
+                                                                                <p>Zone: {resident.zoneId} • Building: {resident.buildingId}</p>
+                                                                                {resident.email && <p>Email: {resident.email}</p>}
+                                                                                {resident.phone && <p>Phone: {resident.phone}</p>}
+                                                                                <p>Joined: {resident.joinedDate}</p>
+                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => openMessageModal(resident)}
+                                                                                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                                                                            >
+                                                                                <MessageCircle className="w-4 h-4" />
+                                                                                Send Message
+                                                                            </button>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    /* Visual Building View */
+                                    <div className="space-y-8">
+                                        {getUniqueZones().map(zoneId => {
+                                            if (selectedZone && selectedZone !== zoneId) return null;
+                                            
+                                            return (
+                                                <div key={zoneId} className="bg-white rounded-xl shadow-lg p-6">
+                                                    <h2 className="text-2xl font-bold text-gray-800 mb-6">Zone {zoneId} - Building Layout</h2>
+                                                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+                                                        {getUniqueBuildingsInZone(zoneId).map(buildingId => {
+                                                            if (selectedBuilding && selectedBuilding !== buildingId) return null;
+                                                            
+                                                            const buildingResidents = getResidentsInBuilding(zoneId, buildingId);
+                                                            const buildingLayout = generateBuildingLayout(buildingResidents);
+                                                            
+                                                            if (buildingLayout.length === 0) return null;
+                                                            
+                                                            return (
+                                                                <div key={buildingId} className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl p-6 border-2 border-blue-200">
+                                                                    <div className="text-center mb-4">
+                                                                        <h3 className="text-xl font-bold text-gray-800 flex items-center justify-center gap-2">
+                                                                            <Building className="w-6 h-6 text-blue-600" />
+                                                                            Building {buildingId}
+                                                                        </h3>
+                                                                        <p className="text-sm text-gray-600">{buildingResidents.length} residents</p>
+                                                                    </div>
+                                                                    
+                                                                    <div className="space-y-2">
+                                                                        {buildingLayout.map(({ floor, units }) => (
+                                                                            <div key={floor} className="bg-white rounded-lg p-3 shadow-sm">
+                                                                                <div className="text-center mb-2">
+                                                                                    <span className="text-sm font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded">
+                                                                                        Floor {floor}
+                                                                                    </span>
+                                                                                </div>
+                                                                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-2">
+                                                                                    {units.map(resident => (
+                                                                                        <div 
+                                                                                            key={resident.id} 
+                                                                                            className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-lg p-3 hover:shadow-md transition-all cursor-pointer group"
+                                                                                            onClick={() => openMessageModal(resident)}
+                                                                                        >
+                                                                                            <div className="text-center">
+                                                                                                <div className="flex items-center justify-center gap-1 mb-1">
+                                                                                                    <User className="w-4 h-4 text-green-700" />
+                                                                                                    {resident.isOnline && (
+                                                                                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                                                                                    )}
+                                                                                                </div>
+                                                                                                <div className="font-bold text-green-800 text-xs mb-1">
+                                                                                                    Unit {resident.unitNumber}
+                                                                                                </div>
+                                                                                                <div className="text-xs text-green-700 font-medium truncate">
+                                                                                                    {resident.name}
+                                                                                                </div>
+                                                                                                <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                                                    <MessageCircle className="w-3 h-3 mx-auto text-green-600" />
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    ))}
+                                                                                </div>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                    
+                                                                    <div className="mt-4 text-center">
+                                                                        <div className="text-xs text-gray-600 bg-white rounded-full px-3 py-1 inline-block">
+                                                                            <Eye className="w-3 h-3 inline mr-1" />
+                                                                            Click any unit to message resident
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Events Tab */}
+                        {activeTab === 'events' && (
+                            <div className="bg-white rounded-xl shadow-lg p-6">
+                                <div className="flex items-center justify-between mb-6">
+                                    <h2 className="text-2xl font-bold text-gray-800">Community Events</h2>
+                                    {currentUser && (
+                                        <button
+                                            onClick={() => setShowEventForm(true)}
+                                            className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                                        >
+                                            <Plus className="w-5 h-5" />
+                                            Create Event
+                                        </button>
+                                    )}
+                                </div>
+                                
+                                <div className="space-y-4">
+                                    {getRelevantEvents().length === 0 ? (
+                                        <div className="text-center py-12">
+                                            <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                                            <h3 className="text-xl font-semibold text-gray-600 mb-2">No Events Yet</h3>
+                                            <p className="text-gray-500">Create the first community event!</p>
+                                        </div>
+                                    ) : (
+                                        getRelevantEvents().map(event => (
+                                            <div key={event.id} className="border border-gray-200 rounded-lg p-6">
+                                                <div className="flex items-start justify-between mb-4">
+                                                    <div>
+                                                        <h3 className="text-xl font-semibold text-gray-800">{event.title}</h3>
+                                                        <p className="text-gray-600 mt-1">{event.description}</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="flex items-center gap-1 text-sm text-gray-600 mb-1">
+                                                            <Clock className="w-4 h-4" />
+                                                            {event.date} at {event.time}
+                                                        </div>
+                                                        {event.location && (
+                                                            <div className="flex items-center gap-1 text-sm text-gray-600">
+                                                                <MapPin className="w-4 h-4" />
+                                                                {event.location}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-4">
+                                                        <span className="text-sm text-gray-600">
+                                                            Created by: {event.createdBy}
+                                                        </span>
+                                                        <span className="text-sm text-gray-600">
+                                                            Attendees: {event.attendees.length}
+                                                            {event.maxAttendees && `/${event.maxAttendees}`}
+                                                        </span>
+                                                    </div>
+                                                    {currentUser && (
+                                                        <button
+                                                            onClick={() => joinEvent(event.id)}
+                                                            disabled={event.attendees.some(a => a.id === currentUser.id)}
+                                                            className={`px-4 py-2 rounded-lg transition-colors ${
+                                                                event.attendees.some(a => a.id === currentUser.id)
+                                                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                                    : 'bg-green-600 text-white hover:bg-green-700'
+                                                            }`}
+                                                        >
+                                                            {event.attendees.some(a => a.id === currentUser.id) ? 'Joined' : 'Join Event'}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Announcements Tab */}
+                        {activeTab === 'announcements' && (
+                            <div className="bg-white rounded-xl shadow-lg p-6">
+                                <div className="flex items-center justify-between mb-6">
+                                    <h2 className="text-2xl font-bold text-gray-800">Community Announcements</h2>
+                                    {currentUser && (
+                                        <button
+                                            onClick={() => setShowAnnouncementForm(true)}
+                                            className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+                                        >
+                                            <Plus className="w-5 h-5" />
+                                            Post Announcement
+                                        </button>
+                                    )}
+                                </div>
+                                
+                                <div className="space-y-4">
+                                    {getRelevantAnnouncements().length === 0 ? (
+                                        <div className="text-center py-12">
+                                            <Bell className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                                            <h3 className="text-xl font-semibold text-gray-600 mb-2">No Announcements Yet</h3>
+                                            <p className="text-gray-500">Be the first to post a community announcement!</p>
+                                        </div>
+                                    ) : (
+                                        getRelevantAnnouncements().map(announcement => (
+                                            <div key={announcement.id} className={`border-l-4 rounded-lg p-6 ${
+                                                announcement.priority === 'high' ? 'border-red-500 bg-red-50' :
+                                                announcement.priority === 'medium' ? 'border-yellow-500 bg-yellow-50' :
+                                                'border-blue-500 bg-blue-50'
+                                            }`}>
+                                                <div className="flex<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community Hub</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Icon Components
+        const Users = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+            </svg>
+        );
+
+        const MessageCircle = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+        );
+
+        const Plus = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+        );
+
+        const Building = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+        );
+
+        const User = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+        );
+
+        const Send = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            </svg>
+        );
+
+        const LogOut = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+        );
+
+        const LogIn = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+            </svg>
+        );
+
+        const UserPlus = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            </svg>
+        );
+
+        const Calendar = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+        );
+
+        const Bell = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5-5-5h5v-13a1 1 0 011-1h3a1 1 0 011 1v13z" />
+            </svg>
+        );
+
+        const Star = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+            </svg>
+        );
+
+        const Clock = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        );
+
+        const MapPin = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        );
+
+        const Grid = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+        );
+
+        const List = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+        );
+
+        const Eye = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+        );
+
+        // Main App Component
+        function CommunityHub() {
+            // State Management
+            const [residents, setResidents] = useState([]);
+            const [users, setUsers] = useState([]);
+            const [events, setEvents] = useState([]);
+            const [announcements, setAnnouncements] = useState([]);
+            const [messages, setMessages] = useState([]);
+            const [selectedBuilding, setSelectedBuilding] = useState('');
+            const [selectedZone, setSelectedZone] = useState('');
+            const [viewMode, setViewMode] = useState('list');
+            const [activeTab, setActiveTab] = useState('residents');
+            const [currentUser, setCurrentUser] = useState(null);
+            const [isAuthenticated, setIsAuthenticated] = useState(false);
+            const [authMode, setAuthMode] = useState('signin');
+            
+            // Modal States
+            const [showRegistrationForm, setShowRegistrationForm] = useState(false);
+            const [showMessageModal, setShowMessageModal] = useState(false);
+            const [showEventForm, setShowEventForm] = useState(false);
+            const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
+            const [messageRecipient, setMessageRecipient] = useState(null);
+            const [messageText, setMessageText] = useState('');
+            
+            // Form Data States
+            const [authData, setAuthData] = useState({
+                email: '',
+                password: '',
+                confirmPassword: '',
+                name: '',
+                zoneId: '',
+                buildingId: '',
+                unitNumber: '',
+                phone: ''
+            });
+            
+            const [formData, setFormData] = useState({
+                name: '',
+                zoneId: '',
+                buildingId: '',
+                unitNumber: '',
+                email: '',
+                phone: ''
+            });
+
+            const [eventData, setEventData] = useState({
+                title: '',
+                description: '',
+                date: '',
+                time: '',
+                location: '',
+                maxAttendees: '',
+                zoneId: '',
+                buildingId: ''
+            });
+
+            const [announcementData, setAnnouncementData] = useState({
+                title: '',
+                message: '',
+                priority: 'normal',
+                zoneId: '',
+                buildingId: ''
+            });
+
+            // Load data from localStorage on mount
+            useEffect(() => {
+                const savedUsers = JSON.parse(localStorage.getItem('neighborApp_users') || '[]');
+                const savedResidents = JSON.parse(localStorage.getItem('neighborApp_residents') || '[]');
+                const savedEvents = JSON.parse(localStorage.getItem('neighborApp_events') || '[]');
+                const savedAnnouncements = JSON.parse(localStorage.getItem('neighborApp_announcements') || '[]');
+                const savedMessages = JSON.parse(localStorage.getItem('neighborApp_messages') || '[]');
+                const savedCurrentUser = localStorage.getItem('neighborApp_currentUser');
+
+                if (savedUsers.length === 0) {
+                    const demoUsers = [
+                        { 
+                            id: 1, 
+                            email: 'demo@example.com', 
+                            password: 'demo123', 
+                            name: 'Demo User', 
+                            zoneId: 'A', 
+                            buildingId: '1', 
+                            unitNumber: '101', 
+                            phone: '555-0123', 
+                            joinedDate: '2025-01-01', 
+                            isOnline: false 
+                        }
+                    ];
+                    setUsers(demoUsers);
+                    setResidents(demoUsers);
+                    localStorage.setItem('neighborApp_users', JSON.stringify(demoUsers));
+                    localStorage.setItem('neighborApp_residents', JSON.stringify(demoUsers));
+                } else {
+                    setUsers(savedUsers);
+                    setResidents(savedResidents);
+                    setEvents(savedEvents);
+                    setAnnouncements(savedAnnouncements);
+                    setMessages(savedMessages);
+                }
+                
+                if (savedCurrentUser) {
+                    const user = JSON.parse(savedCurrentUser);
+                    setCurrentUser(user);
+                    setIsAuthenticated(true);
+                }
+            }, []);
+
+            // Utility Functions
+            const saveToStorage = (key, data) => {
+                localStorage.setItem(key, JSON.stringify(data));
+            };
+
+            // Authentication Functions
+            const handleSignUp = () => {
+                const { email, password, confirmPassword, name, zoneId, buildingId, unitNumber, phone } = authData;
+                
+                if (!email || !password || !name || !zoneId || !buildingId || !unitNumber) {
+                    alert('Please fill in all required fields');
+                    return;
+                }
+                
+                if (password !== confirmPassword) {
+                    alert('Passwords do not match');
+                    return;
+                }
+                
+                if (users.find(user => user.email === email)) {
+                    alert('Email already exists');
+                    return;
+                }
+                
+                if (residents.find(resident => 
+                    resident.zoneId === zoneId && 
+                    resident.buildingId === buildingId && 
+                    resident.unitNumber === unitNumber
+                )) {
+                    alert('This unit is already registered');
+                    return;
+                }
+
+                const newUser = {
+                    id: Date.now(),
+                    email,
+                    password,
+                    name,
+                    zoneId,
+                    buildingId,
+                    unitNumber,
+                    phone,
+                    joinedDate: new Date().toLocaleDateString(),
+                    isOnline: true
+                };
+
+                const updatedUsers = [...users, newUser];
+                const updatedResidents = [...residents, newUser];
+                
+                setUsers(updatedUsers);
+                setResidents(updatedResidents);
+                setCurrentUser(newUser);
+                setIsAuthenticated(true);
+                
+                saveToStorage('neighborApp_users', updatedUsers);
+                saveToStorage('neighborApp_residents', updatedResidents);
+                saveToStorage('neighborApp_currentUser', newUser);
+                
+                setAuthData({
+                    email: '',
+                    password: '',
+                    confirmPassword: '',
+                    name: '',
+                    zoneId: '',
+                    buildingId: '',
+                    unitNumber: '',
+                    phone: ''
+                });
+            };
+
+            const handleSignIn = () => {
+                const { email, password } = authData;
+                
+                if (!email || !password) {
+                    alert('Please enter email and password');
+                    return;
+                }
+
+                const user = users.find(u => u.email === email && u.password === password);
+                
+                if (!user) {
+                    alert('Invalid email or password');
+                    return;
+                }
+
+                const updatedUser = { ...user, isOnline: true };
+                const updatedUsers = users.map(u => u.id === user.id ? updatedUser : u);
+                const updatedResidents = residents.map(r => r.id === user.id ? updatedUser : r);
+                
+                setUsers(updatedUsers);
+                setResidents(updatedResidents);
+                setCurrentUser(updatedUser);
+                setIsAuthenticated(true);
+                
+                saveToStorage('neighborApp_users', updatedUsers);
+                saveToStorage('neighborApp_residents', updatedResidents);
+                saveToStorage('neighborApp_currentUser', updatedUser);
+                
+                setAuthData({ email: '', password: '', confirmPassword: '', name: '', zoneId: '', buildingId: '', unitNumber: '', phone: '' });
+            };
+
+            const handleSignOut = () => {
+                if (currentUser) {
+                    const updatedUsers = users.map(u => 
+                        u.id === currentUser.id ? { ...u, isOnline: false } : u
+                    );
+                    const updatedResidents = residents.map(r => 
+                        r.id === currentUser.id ? { ...r, isOnline: false } : r
+                    );
+                    
+                    setUsers(updatedUsers);
+                    setResidents(updatedResidents);
+                    saveToStorage('neighborApp_users', updatedUsers);
+                    saveToStorage('neighborApp_residents', updatedResidents);
+                }
+                
+                setCurrentUser(null);
+                setIsAuthenticated(false);
+                localStorage.removeItem('neighborApp_currentUser');
+            };
+
+            // Data Management Functions
+            const handleRegistration = () => {
+                if (formData.name && formData.zoneId && formData.buildingId && formData.unitNumber) {
+                    if (residents.find(r => 
+                        r.zoneId === formData.zoneId && 
+                        r.buildingId === formData.buildingId && 
+                        r.unitNumber === formData.unitNumber
+                    )) {
+                        alert('This unit is already registered');
+                        return;
+                    }
+
+                    const newResident = {
+                        id: Date.now(),
+                        ...formData,
+                        joinedDate: new Date().toLocaleDateString(),
+                        isOnline: true,
+                        email: formData.email || currentUser?.email,
+                        registeredBy: currentUser?.name
+                    };
+                    
+                    const updatedResidents = [...residents, newResident];
+                    setResidents(updatedResidents);
+                    saveToStorage('neighborApp_residents', updatedResidents);
+                    
+                    setFormData({ name: '', zoneId: '', buildingId: '', unitNumber: '', email: '', phone: '' });
+                    setShowRegistrationForm(false);
+                }
+            };
+
+            const handleCreateEvent = () => {
+                if (eventData.title && eventData.date && eventData.time && currentUser) {
+                    const newEvent = {
+                        id: Date.now(),
+                        ...eventData,
+                        createdBy: currentUser.name,
+                        createdAt: new Date().toLocaleDateString(),
+                        attendees: [],
+                        status: 'upcoming'
+                    };
+                    
+                    const updatedEvents = [...events, newEvent];
+                    setEvents(updatedEvents);
+                    saveToStorage('neighborApp_events', updatedEvents);
+                    
+                    setEventData({ title: '', description: '', date: '', time: '', location: '', maxAttendees: '', zoneId: '', buildingId: '' });
+                    setShowEventForm(false);
+                }
+            };
+
+            const handleCreateAnnouncement = () => {
+                if (announcementData.title && announcementData.message && currentUser) {
+                    const newAnnouncement = {
+                        id: Date.now(),
+                        ...announcementData,
+                        createdBy: currentUser.name,
+                        createdAt: new Date().toLocaleDateString(),
+                        timestamp: new Date().toLocaleString()
+                    };
+                    
+                    const updatedAnnouncements = [...announcements, newAnnouncement];
+                    setAnnouncements(updatedAnnouncements);
+                    saveToStorage('neighborApp_announcements', updatedAnnouncements);
+                    
+                    setAnnouncementData({ title: '', message: '', priority: 'normal', zoneId: '', buildingId: '' });
+                    setShowAnnouncementForm(false);
+                }
+            };
+
+            const joinEvent = (eventId) => {
+                if (!currentUser) return;
+                
+                const updatedEvents = events.map(event => {
+                    if (event.id === eventId) {
+                        const isAlreadyJoined = event.attendees.some(attendee => attendee.id === currentUser.id);
+                        if (!isAlreadyJoined) {
+                            return {
+                                ...event,
+                                attendees: [...event.attendees, currentUser]
+                            };
+                        }
+                    }
+                    return event;
+                });
+                
+                setEvents(updatedEvents);
+                saveToStorage('neighborApp_events', updatedEvents);
+            };
+
+            const handleSendMessage = () => {
+                if (messageText.trim() && currentUser) {
+                    const newMessage = {
+                        id: Date.now(),
+                        from: currentUser,
+                        to: messageRecipient,
+                        message: messageText,
+                        timestamp: new Date().toLocaleString(),
+                        read: false
+                    };
+                    
+                    const updatedMessages = [...messages, newMessage];
+                    setMessages(updatedMessages);
+                    saveToStorage('neighborApp_messages', updatedMessages);
+                    
+                    setMessageText('');
+                    setShowMessageModal(false);
+                    setMessageRecipient(null);
+                    alert(`Message sent to ${messageRecipient.name}!`);
+                }
+            };
+
+            const openMessageModal = (resident) => {
+                if (!currentUser) {
+                    alert('Please sign in first to send messages');
+                    return;
+                }
+                setMessageRecipient(resident);
+                setShowMessageModal(true);
+            };
+
+            // Helper Functions
+            const getUniqueZones = () => {
+                return [...new Set(residents.map(r => r.zoneId))].sort();
+            };
+
+            const getUniqueBuildingsInZone = (zoneId) => {
+                return [...new Set(residents.filter(r => r.zoneId === zoneId).map(r => r.buildingId))].sort();
+            };
+
+            const getAllUniqueBuildings = () => {
+                return [...new Set(residents.map(r => `${r.zoneId}-${r.buildingId}`))].sort();
+            };
+
+            const getResidentsInBuilding = (zoneId, buildingId) => {
+                return residents.filter(r => r.zoneId === zoneId && r.buildingId === buildingId)
+                    .sort((a, b) => parseInt(a.unitNumber) - parseInt(b.unitNumber));
+            };
+
+            const generateBuildingLayout = (buildingResidents) => {
+                if (buildingResidents.length === 0) return [];
+                
+                const unitsPerFloor = new Map();
+                
+                buildingResidents.forEach(resident => {
+                    const unitNum = parseInt(resident.unitNumber);
+                    const floor = Math.floor(unitNum / 100);
+                    const unitOnFloor = unitNum % 100;
+                    
+                    if (!unitsPerFloor.has(floor)) {
+                        unitsPerFloor.set(floor, []);
+                    }
+                    unitsPerFloor.get(floor).push({ ...resident, unitOnFloor, originalUnit: unitNum });
+                });
+                
+                const sortedFloors = Array.from(unitsPerFloor.keys()).sort((a, b) => b - a);
+                
+                return sortedFloors.map(floor => ({
+                    floor,
+                    units: unitsPerFloor.get(floor).sort((a, b) => a.unitOnFloor - b.unitOnFloor)
+                }));
+            };
+
+            const getRelevantEvents = () => {
+                if (!selectedZone && !selectedBuilding) return events;
+                return events.filter(event => {
+                    if (selectedZone && event.zoneId && event.zoneId !== selectedZone) return false;
+                    if (selectedBuilding && event.buildingId && event.buildingId !== selectedBuilding) return false;
+                    return true;
+                });
+            };
+
+            const getRelevantAnnouncements = () => {
+                if (!selectedZone && !selectedBuilding) return announcements;
+                return announcements.filter(announcement => {
+                    if (selectedZone && announcement.zoneId && announcement.zoneId !== selectedZone) return false;
+                    if (selectedBuilding && announcement.buildingId && announcement.buildingId !== selectedBuilding) return false;
+                    return true;
+                });
+            };
+
+            // Tab Button Component
+            const TabButton = ({ id, label, icon: Icon, count }) => (
+                <button
+                    onClick={() => setActiveTab(id)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                        activeTab === id
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                >
+                    <Icon className="w-4 h-4" />
+                    {label}
+                    {count !== undefined && (
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                            activeTab === id ? 'bg-blue-500' : 'bg-gray-400 text-white'
+                        }`}>
+                            {count}
+                        </span>
+                    )}
+                </button>
+            );
+
+            // Authentication Screen
+            if (!isAuthenticated) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
+                        <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full">
+                            <div className="text-center mb-8">
+                                <Building className="w-16 h-16 text-blue-600 mx-auto mb-4" />
+                                <h1 className="text-3xl font-bold text-gray-800 mb-2">Community Hub</h1>
+                                <p className="text-gray-600">Connect with your neighbors</p>
+                            </div>
+
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                                <p className="text-sm text-blue-800">
+                                    <strong>Demo Account:</strong><br />
+                                    Email: demo@example.com<br />
+                                    Password: demo123
+                                </p>
+                            </div>
+
+                            <div className="flex bg-gray-100 rounded-lg p-1 mb-6">
+                                <button
+                                    onClick={() => setAuthMode('signin')}
+                                    className={`flex-1 py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2 ${
+                                        authMode === 'signin' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
+                                    }`}
+                                >
+                                    <LogIn className="w-4 h-4" />
+                                    Sign In
+                                </button>
+                                <button
+                                    onClick={() => setAuthMode('signup')}
+                                    className={`flex-1 py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2 ${
+                                        authMode === 'signup' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
