@@ -21,8 +21,8 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // Firebase Configuration - Replace with your Firebase config
-const firebaseConfig = {
+        // Firebase Configuration - Replace with your actual Firebase config
+ const firebaseConfig = {
   apiKey: "AIzaSyCBN6opABavXAJCvCnRvghYU4E0faOM7ng",
   authDomain: "community-hub-saltproject.firebaseapp.com",
   projectId: "community-hub-saltproject",
@@ -229,9 +229,11 @@ const firebaseConfig = {
                             ...doc.data()
                         }));
                         setResidents(residentsData);
+                        setError(''); // Clear any previous errors
                     }, (error) => {
                         console.error('Error loading residents:', error);
-                        setError('Error loading residents data');
+                        // For residents, we still want to show an error since it's core functionality
+                        setError('Error loading residents data. Please refresh the page.');
                     });
 
                 return () => unsubscribe();
@@ -252,7 +254,8 @@ const firebaseConfig = {
                         setMessages(messagesData);
                     }, (error) => {
                         console.error('Error loading messages:', error);
-                        setError('Error loading messages');
+                        // Don't show error for messages - it's not critical for basic functionality
+                        setMessages([]); // Set empty array instead of showing error
                     });
 
                 return () => unsubscribe();
