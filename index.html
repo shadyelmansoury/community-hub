@@ -842,19 +842,29 @@
                                         {messages
                                             .filter(m => m.toId === currentUser?.id)
                                             .sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0))
-                                            .map(message => (
-                                                <div key={message.id} className="border-l-4 border-purple-400 p-4 bg-gray-50 rounded-r-lg">
-                                                    <div className="flex justify-between items-center mb-2">
-                                                        <p className="font-semibold text-gray-800">
-                                                            From: {message.fromName}
-                                                        </p>
-                                                        <span className="text-xs text-gray-500">
-                                                            {message.timestamp?.toDate ? message.timestamp.toDate().toLocaleString() : 'Just now'}
-                                                        </span>
+                                            .map(message => {
+                                                const sender = residents.find(r => r.id === message.fromId);
+                                                return (
+                                                    <div key={message.id} className="border-l-4 border-purple-400 p-4 bg-gray-50 rounded-r-lg">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <div>
+                                                                <p className="font-semibold text-gray-800">
+                                                                    From: {sender ? sender.name : message.fromName}
+                                                                </p>
+                                                                {sender && (
+                                                                    <p className="text-sm text-gray-600">
+                                                                        Zone {sender.zoneId} • Building {sender.buildingId} • Unit {sender.unitNumber}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                            <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
+                                                                {message.timestamp?.toDate ? message.timestamp.toDate().toLocaleString() : 'Just now'}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-gray-700 mt-1">{message.message}</p>
                                                     </div>
-                                                    <p className="text-gray-700">{message.message}</p>
-                                                </div>
-                                            ))
+                                                );
+                                            })
                                         }
                                         {messages.filter(m => m.toId === currentUser?.id).length === 0 && (
                                             <p className="text-gray-500 text-center py-8">You have no messages.</p>
@@ -1261,4 +1271,3 @@
     </script>
 </body>
 </html>
-
