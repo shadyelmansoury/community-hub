@@ -13,10 +13,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-firestore-compat.min.js"></script>
     <style>
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-        .modal-enter { opacity: 0; transform: scale(0.95); }
-        .modal-enter-active { opacity: 1; transform: scale(1); transition: opacity 300ms, transform 300ms; }
-        .modal-exit { opacity: 1; transform: scale(1); }
-        .modal-exit-active { opacity: 0; transform: scale(0.95); transition: opacity 300ms, transform 300ms; }
     </style>
 </head>
 <body>
@@ -24,7 +20,7 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // Firebase Configuration
+        // Firebase Configuration - Replace with your actual Firebase config
         const firebaseConfig = {
             apiKey: "AIzaSyCBN6opABavXAJCvCnRvghYU4E0faOM7ng",
             authDomain: "community-hub-saltproject.firebaseapp.com",
@@ -34,7 +30,7 @@
             appId: "1:1007010017446:web:06f371a8755fb509968467"
         };
 
-        // Initialize Firebase
+        // Initialize Firebase (only if not already initialized)
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
@@ -42,25 +38,87 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // --- Icon Components ---
-        const Eye = ({ className = "w-5 h-5" }) => (<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>);
-        const EyeOff = ({ className = "w-5 h-5" }) => (<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7 .946-2.903 3.11-5.268 5.85-6.333m1.585-1.585A9.92 9.92 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.05 10.05 0 01-2.032 3.998M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path d="M2 2l20 20" /></svg>);
-        const Users = ({ className = "w-5 h-5" }) => (<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" /></svg>);
-        const MessageCircle = ({ className = "w-5 h-5" }) => (<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>);
-        const Plus = ({ className = "w-4 h-4" }) => (<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>);
-        const Building = ({ className = "w-5 h-5" }) => (<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>);
-        const User = ({ className = "w-5 h-5" }) => (<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>);
-        const Send = ({ className = "w-4 h-4" }) => (<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>);
-        const LogOut = ({ className = "w-4 h-4" }) => (<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>);
-        const LogIn = ({ className = "w-4 h-4" }) => (<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg>);
-        const UserPlus = ({ className = "w-4 h-4" }) => (<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>);
-        const Grid = ({ className = "w-4 h-4" }) => (<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>);
-        const List = ({ className = "w-4 h-4" }) => (<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>);
-        const AlertTriangle = ({ className = "w-4 h-4" }) => (<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>);
-        const Edit3 = ({ className="w-4 h-4" }) => (<svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>);
+        // Lucide React icons (simplified versions)
+        const Users = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+            </svg>
+        );
+
+        const MessageCircle = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+        );
+
+        const Plus = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+        );
+
+        const Building = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+        );
+
+        const User = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+        );
+
+        const Send = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            </svg>
+        );
+
+        const LogOut = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+        );
+
+        const LogIn = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+            </svg>
+        );
+
+        const UserPlus = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            </svg>
+        );
+
+        const Grid = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+        );
+
+        const List = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+        );
+
+        const Eye = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+        );
+
+        const AlertTriangle = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+        );
 
         function CommunityHub() {
-            // State declarations
             const [residents, setResidents] = useState([]);
             const [messages, setMessages] = useState([]);
             const [selectedBuilding, setSelectedBuilding] = useState('');
@@ -72,126 +130,478 @@
             const [loading, setLoading] = useState(true);
             const [error, setError] = useState('');
             
-            // Modal and form states
             const [showRegistrationForm, setShowRegistrationForm] = useState(false);
             const [showMessageModal, setShowMessageModal] = useState(false);
-            const [showEditProfileModal, setShowEditProfileModal] = useState(false);
-            const [showInbox, setShowInbox] = useState(false);
-            const [passwordVisible, setPasswordVisible] = useState(false);
-            const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
-
-            // Data states
             const [messageRecipient, setMessageRecipient] = useState(null);
             const [messageText, setMessageText] = useState('');
-            const [authData, setAuthData] = useState({ email: '', password: '', confirmPassword: '', name: '', zoneId: '', buildingId: '', unitNumber: '', phone: '' });
-            const [formData, setFormData] = useState({ name: '', zoneId: '', buildingId: '', unitNumber: '', email: '', phone: '' });
-            const [editProfileData, setEditProfileData] = useState({ name: '', phone: '' });
+            const [showInbox, setShowInbox] = useState(false);
+            
+            const [authData, setAuthData] = useState({
+                email: '',
+                password: '',
+                confirmPassword: '',
+                name: '',
+                zoneId: '',
+                buildingId: '',
+                unitNumber: '',
+                phone: ''
+            });
+            
+            const [formData, setFormData] = useState({
+                name: '',
+                zoneId: '',
+                buildingId: '',
+                unitNumber: '',
+                email: '',
+                phone: ''
+            });
 
-            const isFirebaseConfigured = () => firebaseConfig.apiKey.startsWith("AIza");
+            // Check if Firebase is configured
+            const isFirebaseConfigured = () => {
+                // A simple check to see if the apiKey has been replaced
+                return firebaseConfig.apiKey !== "your-api-key-here" && firebaseConfig.apiKey.startsWith("AIza");
+            };
 
+            // Initialize auth state listener
             useEffect(() => {
-                if (!isFirebaseConfigured()) { setLoading(false); return; }
+                if (!isFirebaseConfigured()) {
+                    setLoading(false);
+                    return;
+                }
+
                 const unsubscribe = auth.onAuthStateChanged(async (user) => {
                     if (user) {
                         try {
+                            // Get user profile from Firestore
                             const userDoc = await db.collection('users').doc(user.uid).get();
                             if (userDoc.exists) {
                                 const userData = { id: user.uid, ...userDoc.data() };
                                 setCurrentUser(userData);
                                 setIsAuthenticated(true);
-                                await db.collection('users').doc(user.uid).update({ isOnline: true, lastSeen: firebase.firestore.FieldValue.serverTimestamp() });
-                            } else { auth.signOut(); }
-                        } catch (err) { console.error(err); auth.signOut(); }
+                                
+                                // Update user online status
+                                await db.collection('users').doc(user.uid).update({
+                                    isOnline: true,
+                                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                                });
+                                
+                                console.log('Current user loaded:', userData);
+                            }
+                        } catch (error) {
+                            console.error('Error fetching user data:', error);
+                            setError('Error loading user data');
+                        }
                     } else {
                         setCurrentUser(null);
                         setIsAuthenticated(false);
                     }
                     setLoading(false);
                 });
+
                 return () => unsubscribe();
             }, []);
 
+            // Load residents only when authenticated
             useEffect(() => {
-                if (!isAuthenticated) { setResidents([]); return; }
-                const unsub = db.collection('users').onSnapshot(snap => {
-                    const resData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    resData.sort((a,b) => a.zoneId.localeCompare(b.zoneId) || a.buildingId.localeCompare(b.buildingId) || parseInt(a.unitNumber) - parseInt(b.unitNumber));
-                    setResidents(resData);
-                }, err => setError(`Residents Error: ${err.message}`));
-                return () => unsub();
-            }, [isAuthenticated]);
-
-            useEffect(() => {
-                if (!currentUser) { setMessages([]); return; }
-                const unsub = db.collection('messages').where('participants', 'array-contains', currentUser.id).orderBy('timestamp', 'desc').onSnapshot(snap => setMessages(snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))), err => console.error(err));
-                return () => unsub();
-            }, [currentUser]);
-
-            // Handlers
-            const handleAuthAction = async (action) => {
-                const { email, password, confirmPassword, name, zoneId, buildingId, unitNumber, phone } = authData;
-                if (action === 'signup') {
-                    if (!email || !password || !name || !zoneId || !buildingId || !unitNumber) return setError('Please fill all required fields.');
-                    if (password !== confirmPassword) return setError('Passwords do not match.');
-                    if (password.length < 6) return setError('Password must be at least 6 characters.');
-                } else {
-                    if (!email || !password) return setError('Please enter email and password.');
-                }
-                setLoading(true); setError('');
-
-                if (action === 'signin') {
-                    try {
-                        await auth.signInWithEmailAndPassword(email, password);
-                        setAuthData({ email: '', password: '', confirmPassword: '', name: '', zoneId: '', buildingId: '', unitNumber: '', phone: '' });
-                    } catch (err) {
-                        setError(err.message);
-                    } finally {
-                        setLoading(false);
-                    }
+                // *** FIX: Guard added to prevent running when logged out ***
+                if (!isAuthenticated) {
+                    setResidents([]); // Clear residents list when logging out
                     return;
                 }
 
-                let newUser = null;
+                if (!isFirebaseConfigured()) {
+                    console.log('Firebase not configured, loading demo data');
+                    const demoUsers = [
+                        { 
+                            id: 'demo1', 
+                            email: 'demo@example.com', 
+                            name: 'Demo User', 
+                            zoneId: 'A', 
+                            buildingId: '1', 
+                            unitNumber: '101', 
+                            phone: '555-0123', 
+                            joinedDate: '2025-01-01', 
+                            isOnline: false 
+                        }
+                    ];
+                    setResidents(demoUsers);
+                    return;
+                }
+
+                console.log('Fetching residents for authenticated user...');
+                
+                const unsubscribe = db.collection('users')
+                    .onSnapshot((snapshot) => {
+                        const residentsData = snapshot.docs.map(doc => ({
+                            id: doc.id,
+                            ...doc.data()
+                        }));
+                        
+                        residentsData.sort((a, b) => {
+                            if (a.zoneId !== b.zoneId) return a.zoneId.localeCompare(b.zoneId);
+                            if (a.buildingId !== b.buildingId) return a.buildingId.localeCompare(b.buildingId);
+                            return parseInt(a.unitNumber) - parseInt(b.unitNumber);
+                        });
+                        
+                        setResidents(residentsData);
+                        setError(''); // Clear any previous errors
+                    }, (error) => {
+                        console.error('Real-time listener error:', error);
+                        setError(`Firestore Listener Error: ${error.message}`);
+                    });
+
+                return () => unsubscribe();
+            }, [isAuthenticated]); // *** FIX: Dependency array updated ***
+
+            // Load messages from Firestore
+            useEffect(() => {
+                if (!isFirebaseConfigured() || !currentUser) {
+                    setMessages([]);
+                    return;
+                }
+
+                const unsubscribe = db.collection('messages')
+                    .where('participants', 'array-contains', currentUser.id)
+                    .orderBy('timestamp', 'desc')
+                    .onSnapshot((snapshot) => {
+                        const messagesData = snapshot.docs.map(doc => ({
+                            id: doc.id,
+                            ...doc.data()
+                        }));
+                        setMessages(messagesData);
+                    }, (error) => {
+                        console.error('Error loading messages:', error);
+                        setError(`Could not load messages. Check Firestore rules and indexes. Error: ${error.message}`);
+                        setMessages([]);
+                    });
+
+                return () => unsubscribe();
+            }, [currentUser]);
+
+            const handleSignUp = async () => {
+                if (!isFirebaseConfigured()) {
+                    setError('Firebase is not configured. Please add your Firebase configuration.');
+                    return;
+                }
+
+                const { email, password, confirmPassword, name, zoneId, buildingId, unitNumber, phone } = authData;
+                
+                if (!email || !password || !name || !zoneId || !buildingId || !unitNumber) {
+                    setError('Please fill in all required fields');
+                    return;
+                }
+                
+                if (password !== confirmPassword) {
+                    setError('Passwords do not match');
+                    return;
+                }
+
+                if (password.length < 6) {
+                    setError('Password must be at least 6 characters long');
+                    return;
+                }
+
+                setLoading(true);
+                setError('');
+
                 try {
-                    const existingUnit = await db.collection('users').where('zoneId', '==', zoneId).where('buildingId', '==', buildingId).where('unitNumber', '==', unitNumber).get();
-                    if (!existingUnit.empty) throw new Error("This unit is already registered.");
-                    
-                    const userCred = await auth.createUserWithEmailAndPassword(email, password);
-                    newUser = userCred.user;
-                    
-                    await db.collection('users').doc(newUser.uid).set({
-                        email, name, zoneId, buildingId, unitNumber,
-                        phone: String(phone || ''),
+                    // Check if unit is already taken
+                    const existingUnit = await db.collection('users')
+                        .where('zoneId', '==', zoneId)
+                        .where('buildingId', '==', buildingId)
+                        .where('unitNumber', '==', unitNumber)
+                        .get();
+
+                    if (!existingUnit.empty) {
+                        setError('This unit is already registered');
+                        setLoading(false);
+                        return;
+                    }
+
+                    // Create user account
+                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                    const user = userCredential.user;
+
+                    // Create user profile in Firestore
+                    await db.collection('users').doc(user.uid).set({
+                        email,
+                        name,
+                        zoneId,
+                        buildingId,
+                        unitNumber,
+                        phone: phone || '',
                         joinedDate: firebase.firestore.FieldValue.serverTimestamp(),
                         isOnline: true,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
+
+                    setAuthData({
+                        email: '',
+                        password: '',
+                        confirmPassword: '',
+                        name: '',
+                        zoneId: '',
+                        buildingId: '',
+                        unitNumber: '',
+                        phone: ''
+                    });
+
+                } catch (error) {
+                    console.error('Error during sign up:', error);
+                    setError(error.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleSignIn = async () => {
+                if (!isFirebaseConfigured()) {
+                    setError('Firebase is not configured. Please add your Firebase configuration.');
+                    return;
+                }
+
+                const { email, password } = authData;
+                
+                if (!email || !password) {
+                    setError('Please enter email and password');
+                    return;
+                }
+
+                setLoading(true);
+                setError('');
+
+                try {
+                    await auth.signInWithEmailAndPassword(email, password);
                     setAuthData({ email: '', password: '', confirmPassword: '', name: '', zoneId: '', buildingId: '', unitNumber: '', phone: '' });
-                } catch (err) {
-                    if (newUser) { await newUser.delete(); }
-                    setError(err.message);
+                } catch (error) {
+                    console.error('Error during sign in:', error);
+                    setError(error.message);
                 } finally {
                     setLoading(false);
                 }
             };
 
             const handleSignOut = async () => {
-                if (currentUser) await db.collection('users').doc(currentUser.id).update({ isOnline: false, lastSeen: firebase.firestore.FieldValue.serverTimestamp() });
-                await auth.signOut();
-            };
+                if (!isFirebaseConfigured()) {
+                    setCurrentUser(null);
+                    setIsAuthenticated(false);
+                    return;
+                }
 
-            const handleUpdateProfile = async () => {
-                if (!editProfileData.name.trim()) return setError("Name cannot be empty.");
-                setLoading(true);
                 try {
-                    await db.collection('users').doc(currentUser.id).update({ name: editProfileData.name, phone: editProfileData.phone });
-                    setShowEditProfileModal(false);
-                } catch (err) { setError("Failed to update profile."); } finally { setLoading(false); }
+                    if (currentUser) {
+                        // Update user online status
+                        await db.collection('users').doc(currentUser.id).update({
+                            isOnline: false,
+                            lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
+                    await auth.signOut();
+                } catch (error) {
+                    console.error('Error during sign out:', error);
+                    setError('Error signing out');
+                }
             };
 
-            const getUniqueValues = (key) => [...new Set(residents.map(r => r[key]))].sort();
+            const handleRegistration = async () => {
+                if (!isFirebaseConfigured()) {
+                    setError('Firebase is not configured. Please add your Firebase configuration.');
+                    return;
+                }
 
-            if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
+                if (!formData.name || !formData.zoneId || !formData.buildingId || !formData.unitNumber) {
+                    setError('Please fill in all required fields');
+                    return;
+                }
+
+                try {
+                    // Check if unit is already taken
+                    const existingUnit = await db.collection('users')
+                        .where('zoneId', '==', formData.zoneId)
+                        .where('buildingId', '==', formData.buildingId)
+                        .where('unitNumber', '==', formData.unitNumber)
+                        .get();
+
+                    if (!existingUnit.empty) {
+                        setError('This unit is already registered');
+                        return;
+                    }
+
+                    // Add new resident (admin feature)
+                    await db.collection('users').add({
+                        name: formData.name,
+                        zoneId: formData.zoneId,
+                        buildingId: formData.buildingId,
+                        unitNumber: formData.unitNumber,
+                        email: formData.email || '',
+                        phone: formData.phone || '',
+                        joinedDate: firebase.firestore.FieldValue.serverTimestamp(),
+                        isOnline: false,
+                        registeredBy: currentUser?.id,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    setFormData({ name: '', zoneId: '', buildingId: '', unitNumber: '', email: '', phone: '' });
+                    setShowRegistrationForm(false);
+                    setError('');
+
+                } catch (error) {
+                    console.error('Error adding resident:', error);
+                    setError('Error adding resident');
+                }
+            };
+
+            const handleSendMessage = async () => {
+                if (!isFirebaseConfigured()) {
+                    setError('Firebase is not configured. Please add your Firebase configuration.');
+                    return;
+                }
+
+                if (!messageText.trim() || !currentUser || !messageRecipient) return;
+
+                try {
+                    await db.collection('messages').add({
+                        fromId: currentUser.id,
+                        fromName: currentUser.name,
+                        toId: messageRecipient.id,
+                        toName: messageRecipient.name,
+                        message: messageText.trim(),
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        participants: [currentUser.id, messageRecipient.id],
+                        read: false
+                    });
+
+                    setMessageText('');
+                    setShowMessageModal(false);
+                    setMessageRecipient(null);
+                    setError('');
+                    alert(`Message sent to ${messageRecipient.name}!`);
+
+                } catch (error) {
+                    console.error('Error sending message:', error);
+                    setError('Error sending message');
+                }
+            };
+
+            const openMessageModal = (resident) => {
+                if (!currentUser) {
+                    setError('Please sign in first to send messages');
+                    return;
+                }
+                
+                if (currentUser.id === resident.id) {
+                    return;
+                }
+                
+                setMessageRecipient(resident);
+                setShowMessageModal(true);
+                setError('');
+            };
+
+            const canMessageResident = (resident) => {
+                return currentUser && currentUser.id !== resident.id;
+            };
+
+            const getUniqueZones = () => {
+                return [...new Set(residents.map(r => r.zoneId))].sort();
+            };
+
+            const getUniqueBuildingsInZone = (zoneId) => {
+                return [...new Set(residents.filter(r => r.zoneId === zoneId).map(r => r.buildingId))].sort();
+            };
+
+            const getAllUniqueBuildings = () => {
+                return [...new Set(residents.map(r => `${r.zoneId}-${r.buildingId}`))].sort();
+            };
+
+            const getResidentsInBuilding = (zoneId, buildingId) => {
+                return residents.filter(r => r.zoneId === zoneId && r.buildingId === buildingId)
+                    .sort((a, b) => parseInt(a.unitNumber) - parseInt(b.unitNumber));
+            };
+
+            const generateBuildingLayout = (buildingResidents) => {
+                if (buildingResidents.length === 0) return [];
+                
+                const unitsPerFloor = new Map();
+                
+                buildingResidents.forEach(resident => {
+                    const unitNum = parseInt(resident.unitNumber);
+                    const floor = Math.floor(unitNum / 100);
+                    const unitOnFloor = unitNum % 100;
+                    
+                    if (!unitsPerFloor.has(floor)) {
+                        unitsPerFloor.set(floor, []);
+                    }
+                    unitsPerFloor.get(floor).push({ ...resident, unitOnFloor, originalUnit: unitNum });
+                });
+                
+                const sortedFloors = Array.from(unitsPerFloor.keys()).sort((a, b) => b - a);
+                
+                return sortedFloors.map(floor => ({
+                    floor,
+                    units: unitsPerFloor.get(floor).sort((a, b) => a.unitOnFloor - b.unitOnFloor)
+                }));
+            };
+
+            if (loading) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+                        <div className="text-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                            <p className="text-gray-600">Loading...</p>
+                        </div>
+                    </div>
+                );
+            }
+
+            // Firebase configuration warning
+            if (!isFirebaseConfigured()) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-100 flex items-center justify-center p-6">
+                        <div className="bg-white rounded-xl shadow-2xl p-8 max-w-2xl w-full">
+                            <div className="text-center mb-6">
+                                <AlertTriangle className="w-16 h-16 text-red-600 mx-auto mb-4" />
+                                <h1 className="text-3xl font-bold text-gray-800 mb-2">Firebase Configuration Required</h1>
+                                <p className="text-gray-600">Please configure Firebase to enable authentication and data storage</p>
+                            </div>
+
+                            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                                <div className="flex">
+                                    <AlertTriangle className="w-5 h-5 text-yellow-400 mr-2" />
+                                    <div>
+                                        <h3 className="text-lg font-medium text-yellow-800">Setup Instructions:</h3>
+                                        <ol className="mt-2 text-sm text-yellow-700 list-decimal list-inside space-y-1">
+                                            <li>Create a Firebase project at <a href="https://console.firebase.google.com" target="_blank" className="underline">Firebase Console</a></li>
+                                            <li>Enable Authentication (Email/Password)</li>
+                                            <li>Create a Firestore database</li>
+                                            <li>Get your Firebase config from Project Settings</li>
+                                            <li>Replace the firebaseConfig object in this code with your actual config</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-gray-100 rounded-lg p-4">
+                                <h3 className="font-semibold text-gray-800 mb-2">Sample Firebase Config:</h3>
+                                <pre className="text-sm text-gray-600 overflow-x-auto">
+{`const firebaseConfig = {
+  apiKey: "your-actual-api-key",
+  authDomain: "your-project.firebaseapp.com",
+  projectId: "your-project-id",
+  storageBucket: "your-project.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "your-app-id"
+};`}
+                                </pre>
+                            </div>
+
+                            <div className="mt-6 text-center">
+                                <p className="text-sm text-gray-500">The app is currently running in demo mode with limited functionality.</p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
 
             if (!isAuthenticated) {
                 return (
@@ -202,29 +612,150 @@
                                 <h1 className="text-3xl font-bold text-gray-800 mb-2">Community Hub</h1>
                                 <p className="text-gray-600">Connect with your neighbors</p>
                             </div>
-                            {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert"><span className="block sm:inline">{error}</span></div>}
-                            
+
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                                    <p className="text-sm text-red-800">{error}</p>
+                                </div>
+                            )}
+
                             <div className="flex bg-gray-100 rounded-lg p-1 mb-6">
-                                <button onClick={() => { setAuthMode('signin'); setError(''); }} className={`flex-1 py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2 ${authMode === 'signin' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'}`}><LogIn /> Sign In</button>
-                                <button onClick={() => { setAuthMode('signup'); setError(''); }} className={`flex-1 py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2 ${authMode === 'signup' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'}`}><UserPlus /> Sign Up</button>
+                                <button
+                                    onClick={() => {
+                                        setAuthMode('signin');
+                                        setError('');
+                                    }}
+                                    className={`flex-1 py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2 ${
+                                        authMode === 'signin' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
+                                    }`}
+                                >
+                                    <LogIn className="w-4 h-4" />
+                                    Sign In
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setAuthMode('signup');
+                                        setError('');
+                                    }}
+                                    className={`flex-1 py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2 ${
+                                        authMode === 'signup' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
+                                    }`}
+                                >
+                                    <UserPlus className="w-4 h-4" />
+                                    Sign Up
+                                </button>
                             </div>
 
                             <div className="space-y-4">
                                 {authMode === 'signup' && (
                                     <>
-                                        <div><label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label><input type="text" value={authData.name} onChange={(e) => setAuthData({...authData, name: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg"/></div>
-                                        <div className="grid grid-cols-3 gap-3">
-                                            <div><label className="block text-sm font-medium text-gray-700 mb-1">Zone *</label><input type="text" value={authData.zoneId} onChange={(e) => setAuthData({...authData, zoneId: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="B1"/></div>
-                                            <div><label className="block text-sm font-medium text-gray-700 mb-1">Building *</label><input type="text" value={authData.buildingId} onChange={(e) => setAuthData({...authData, buildingId: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="CH16"/></div>
-                                            <div><label className="block text-sm font-medium text-gray-700 mb-1">Unit *</label><input type="text" value={authData.unitNumber} onChange={(e) => setAuthData({...authData, unitNumber: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="401"/></div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                                            <input
+                                                type="text"
+                                                value={authData.name}
+                                                onChange={(e) => setAuthData({...authData, name: e.target.value})}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
                                         </div>
-                                        <div><label className="block text-sm font-medium text-gray-700 mb-1">Phone (Optional)</label><input type="tel" value={authData.phone} onChange={(e) => setAuthData({...authData, phone: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg"/></div>
+                                        <div className="grid grid-cols-3 gap-3">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Zone *</label>
+                                                <input
+                                                    type="text"
+                                                    value={authData.zoneId}
+                                                    onChange={(e) => setAuthData({...authData, zoneId: e.target.value})}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    placeholder="A"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Building *</label>
+                                                <input
+                                                    type="text"
+                                                    value={authData.buildingId}
+                                                    onChange={(e) => setAuthData({...authData, buildingId: e.target.value})}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    placeholder="1"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Unit *</label>
+                                                <input
+                                                    type="text"
+                                                    value={authData.unitNumber}
+                                                    onChange={(e) => setAuthData({...authData, unitNumber: e.target.value})}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    placeholder="101"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Phone (Optional)</label>
+                                            <input
+                                                type="tel"
+                                                value={authData.phone}
+                                                onChange={(e) => setAuthData({...authData, phone: e.target.value})}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
                                     </>
                                 )}
-                                <div><label className="block text-sm font-medium text-gray-700 mb-1">Email *</label><input type="email" value={authData.email} onChange={(e) => setAuthData({...authData, email: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg"/></div>
-                                <div className="relative"><label className="block text-sm font-medium text-gray-700 mb-1">Password *</label><input type={passwordVisible ? "text" : "password"} value={authData.password} onChange={(e) => setAuthData({...authData, password: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg"/><button onClick={() => setPasswordVisible(!passwordVisible)} className="absolute inset-y-0 right-0 top-6 pr-3 flex items-center text-sm leading-5 text-gray-500">{passwordVisible ? <EyeOff /> : <Eye />}</button></div>
-                                {authMode === 'signup' && <div className="relative"><label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password *</label><input type={confirmPasswordVisible ? "text" : "password"} value={authData.confirmPassword} onChange={(e) => setAuthData({...authData, confirmPassword: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg"/><button onClick={() => setConfirmPasswordVisible(!confirmPasswordVisible)} className="absolute inset-y-0 right-0 top-6 pr-3 flex items-center text-sm leading-5 text-gray-500">{confirmPasswordVisible ? <EyeOff /> : <Eye />}</button></div>}
-                                <button onClick={() => handleAuthAction(authMode)} disabled={loading} className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50">{loading ? 'Please wait...' : (authMode === 'signin' ? 'Sign In' : 'Create Account')}</button>
+                                
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                                    <input
+                                        type="email"
+                                        value={authData.email}
+                                        onChange={(e) => setAuthData({...authData, email: e.target.value})}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+                                    <input
+                                        type="password"
+                                        value={authData.password}
+                                        onChange={(e) => setAuthData({...authData, password: e.target.value})}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                </div>
+                                
+                                {authMode === 'signup' && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password *</label>
+                                        <input
+                                            type="password"
+                                            value={authData.confirmPassword}
+                                            onChange={(e) => setAuthData({...authData, confirmPassword: e.target.value})}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+                                )}
+                                
+                                <button
+                                    onClick={authMode === 'signin' ? handleSignIn : handleSignUp}
+                                    disabled={loading}
+                                    className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold"
+                                >
+                                    {loading ? 'Please wait...' : (authMode === 'signin' ? 'Sign In' : 'Create Account')}
+                                </button>
+                            </div>
+
+                            <div className="mt-6 text-center text-sm text-gray-600">
+                                <p>
+                                    {authMode === 'signin' ? "Don't have an account? " : "Already have an account? "}
+                                    <button
+                                        onClick={() => {
+                                            setAuthMode(authMode === 'signin' ? 'signup' : 'signin');
+                                            setError('');
+                                        }}
+                                        className="text-blue-600 hover:underline font-medium"
+                                    >
+                                        {authMode === 'signin' ? 'Sign up here' : 'Sign in here'}
+                                    </button>
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -235,87 +766,496 @@
                 <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
                     <div className="max-w-7xl mx-auto">
                         <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
-                             {/* Header */}
-                            <div className="flex flex-wrap items-center justify-between mb-6 gap-4">
+                            <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-3">
                                     <Building className="text-blue-600 w-8 h-8" />
                                     <div>
                                         <h1 className="text-3xl font-bold text-gray-800">Community Hub</h1>
-                                        <p className="text-gray-600">Welcome, {currentUser.name}</p>
+                                        <p className="text-gray-600">Connect, communicate, and build community</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <button onClick={() => { setEditProfileData({ name: currentUser.name, phone: currentUser.phone || '' }); setShowEditProfileModal(true); }} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-all duration-300 hover:shadow-lg"><Edit3 /> Edit Profile</button>
-                                    <button onClick={handleSignOut} className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center gap-2 transition-all duration-300 hover:shadow-lg"><LogOut /> Sign Out</button>
+                                    {currentUser && (
+                                        <div className="text-right mr-4">
+                                            <p className="font-semibold text-gray-800">{currentUser.name}</p>
+                                            <p className="text-sm text-gray-600">Zone {currentUser.zoneId} • Unit {currentUser.unitNumber}</p>
+                                        </div>
+                                    )}
+                                    <button
+                                        onClick={() => {
+                                            setShowRegistrationForm(true);
+                                            setError('');
+                                        }}
+                                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        Add Resident
+                                    </button>
+                                    <button
+                                        onClick={handleSignOut}
+                                        className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+                                    >
+                                        <LogOut className="w-4 h-4" />
+                                        Sign Out
+                                    </button>
+                                </div>
+                            </div>
+
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                                    <p className="text-sm text-red-800">{error}</p>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                                <div className="bg-blue-50 p-6 rounded-lg">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Users className="text-blue-600 w-5 h-5" />
+                                        <h3 className="font-semibold text-gray-800">Total Residents</h3>
+                                    </div>
+                                    <p className="text-2xl font-bold text-blue-600">{residents.length}</p>
+                                </div>
+                                <div className="bg-green-50 p-6 rounded-lg">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Building className="text-green-600 w-5 h-5" />
+                                        <h3 className="font-semibold text-gray-800">Active Zones</h3>
+                                    </div>
+                                    <p className="text-2xl font-bold text-green-600">{getUniqueZones().length}</p>
+                                </div>
+                                <div className="bg-purple-50 p-6 rounded-lg">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                            <MessageCircle className="text-purple-600 w-5 h-5" />
+                                            <h3 className="font-semibold text-gray-800">Your Messages</h3>
+                                        </div>
+                                        <button 
+                                            onClick={() => setShowInbox(!showInbox)}
+                                            className="text-sm bg-purple-200 text-purple-800 px-3 py-1 rounded-full hover:bg-purple-300 transition-colors"
+                                        >
+                                            {showInbox ? 'Hide' : 'Show'}
+                                        </button>
+                                    </div>
+                                    <p className="text-2xl font-bold text-purple-600">{messages.filter(m => m.toId === currentUser?.id).length}</p>
+                                </div>
+                            </div>
+
+                            {showInbox && (
+                                <div className="bg-white rounded-xl shadow-inner border border-gray-200 p-6 mb-8">
+                                    <h2 className="text-2xl font-bold text-gray-800 mb-4">Your Inbox</h2>
+                                    <div className="space-y-4 max-h-96 overflow-y-auto pr-4">
+                                        {messages
+                                            .filter(m => m.toId === currentUser?.id)
+                                            .sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0))
+                                            .map(message => (
+                                                <div key={message.id} className="border-l-4 border-purple-400 p-4 bg-gray-50 rounded-r-lg">
+                                                    <div className="flex justify-between items-center mb-2">
+                                                        <p className="font-semibold text-gray-800">
+                                                            From: {message.fromName}
+                                                        </p>
+                                                        <span className="text-xs text-gray-500">
+                                                            {message.timestamp?.toDate ? message.timestamp.toDate().toLocaleString() : 'Just now'}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-gray-700">{message.message}</p>
+                                                </div>
+                                            ))
+                                        }
+                                        {messages.filter(m => m.toId === currentUser?.id).length === 0 && (
+                                            <p className="text-gray-500 text-center py-8">You have no messages.</p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="mb-6">
+                                <div className="flex flex-wrap gap-4 mb-4">
+                                    <select
+                                        value={selectedZone}
+                                        onChange={(e) => {
+                                            setSelectedZone(e.target.value);
+                                            setSelectedBuilding('');
+                                        }}
+                                        className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <option value="">All Zones</option>
+                                        {getUniqueZones().map(zone => (
+                                            <option key={zone} value={zone}>Zone {zone}</option>
+                                        ))}
+                                    </select>
+                                    
+                                    <select
+                                        value={selectedBuilding}
+                                        onChange={(e) => setSelectedBuilding(e.target.value)}
+                                        className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <option value="">All Buildings</option>
+                                        {selectedZone ? (
+                                            getUniqueBuildingsInZone(selectedZone).map(building => (
+                                                <option key={building} value={building}>Building {building}</option>
+                                            ))
+                                        ) : (
+                                            getAllUniqueBuildings().map(building => {
+                                                const [zone, buildingId] = building.split('-');
+                                                return (
+                                                    <option key={building} value={buildingId}>Zone {zone} - Building {buildingId}</option>
+                                                );
+                                            })
+                                        )}
+                                    </select>
+
+                                    <div className="flex bg-gray-200 rounded-lg p-1">
+                                        <button
+                                            onClick={() => setViewMode('list')}
+                                            className={`px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${
+                                                viewMode === 'list' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
+                                            }`}
+                                        >
+                                            <List className="w-4 h-4" />
+                                            List View
+                                        </button>
+                                        <button
+                                            onClick={() => setViewMode('visual')}
+                                            className={`px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${
+                                                viewMode === 'visual' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
+                                            }`}
+                                        >
+                                            <Grid className="w-4 h-4" />
+                                            Building View
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        
-                        {/* Modals */}
-                        {showEditProfileModal && (
-                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 modal-enter-active">
-                                <div className="bg-white rounded-xl p-8 max-w-md w-full">
-                                    <h2 className="text-2xl font-bold mb-4">Edit Profile</h2>
-                                    {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-                                    <input value={editProfileData.name} onChange={e => setEditProfileData({...editProfileData, name: e.target.value})} className="w-full p-2 border rounded mb-2" placeholder="Name"/>
-                                    <input value={editProfileData.phone} onChange={e => setEditProfileData({...editProfileData, phone: e.target.value})} className="w-full p-2 border rounded mb-4" placeholder="Phone"/>
-                                    <div className="flex justify-end gap-4">
-                                        <button onClick={() => setShowEditProfileModal(false)} className="bg-gray-300 px-4 py-2 rounded">Cancel</button>
-                                        <button onClick={handleUpdateProfile} className="bg-blue-600 text-white px-4 py-2 rounded">Save Changes</button>
+
+                        <div className="space-y-6">
+                            {residents.length === 0 ? (
+                                isAuthenticated && (
+                                <div className="bg-white rounded-xl shadow-lg p-12 text-center">
+                                    <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                                    <h3 className="text-xl font-semibold text-gray-600 mb-2">No Residents Registered Yet</h3>
+                                    <p className="text-gray-500 mb-6">Add the first resident to start building your community!</p>
+                                    <button
+                                        onClick={() => setShowRegistrationForm(true)}
+                                        className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                                    >
+                                        Add Resident
+                                    </button>
+                                </div>
+                                )
+                            ) : viewMode === 'list' ? (
+                                getUniqueZones().map(zoneId => {
+                                    if (selectedZone && selectedZone !== zoneId) return null;
+                                    
+                                    return (
+                                        <div key={zoneId} className="bg-white rounded-xl shadow-lg p-6">
+                                            <h2 className="text-2xl font-bold text-gray-800 mb-4">Zone {zoneId}</h2>
+                                            <div className="space-y-6">
+                                                {getUniqueBuildingsInZone(zoneId).map(buildingId => {
+                                                    if (selectedBuilding && selectedBuilding !== buildingId) return null;
+                                                    
+                                                    const buildingResidents = getResidentsInBuilding(zoneId, buildingId);
+                                                    
+                                                    return (
+                                                        <div key={buildingId} className="border border-gray-200 rounded-lg p-4">
+                                                            <h3 className="text-xl font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                                                                <Building className="w-5 h-5" />
+                                                                Building {buildingId}
+                                                            </h3>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                                {buildingResidents.map(resident => (
+                                                                    <div key={resident.id} className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                                                        <div className="flex items-start justify-between mb-3">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <div className="relative">
+                                                                                    <User className="text-gray-600 w-5 h-5" />
+                                                                                    {resident.isOnline && (
+                                                                                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                                                                                    )}
+                                                                                </div>
+                                                                                <span className="font-semibold text-gray-800">{resident.name}</span>
+                                                                                {currentUser && currentUser.id === resident.id && (
+                                                                                    <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">You</span>
+                                                                                )}
+                                                                            </div>
+                                                                            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
+                                                                                Unit {resident.unitNumber}
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className="text-sm text-gray-600 mb-3">
+                                                                            <p>Zone: {resident.zoneId} • Building: {resident.buildingId}</p>
+                                                                            {resident.email && <p>Email: {resident.email}</p>}
+                                                                            {resident.phone && <p>Phone: {resident.phone}</p>}
+                                                                            <p>Joined: {resident.joinedDate?.toDate ? resident.joinedDate.toDate().toLocaleDateString() : resident.joinedDate}</p>
+                                                                        </div>
+                                                                        {canMessageResident(resident) && (
+                                                                            <button
+                                                                                onClick={() => openMessageModal(resident)}
+                                                                                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                                                                            >
+                                                                                <MessageCircle className="w-4 h-4" />
+                                                                                Send Message
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <div className="space-y-8">
+                                    {getUniqueZones().map(zoneId => {
+                                        if (selectedZone && selectedZone !== zoneId) return null;
+                                        
+                                        return (
+                                            <div key={zoneId} className="bg-white rounded-xl shadow-lg p-6">
+                                                <h2 className="text-2xl font-bold text-gray-800 mb-6">Zone {zoneId} - Building Layout</h2>
+                                                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+                                                    {getUniqueBuildingsInZone(zoneId).map(buildingId => {
+                                                        if (selectedBuilding && selectedBuilding !== buildingId) return null;
+                                                        
+                                                        const buildingResidents = getResidentsInBuilding(zoneId, buildingId);
+                                                        const buildingLayout = generateBuildingLayout(buildingResidents);
+                                                        
+                                                        if (buildingLayout.length === 0) return null;
+                                                        
+                                                        return (
+                                                            <div key={buildingId} className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl p-6 border-2 border-blue-200">
+                                                                <div className="text-center mb-4">
+                                                                    <h3 className="text-xl font-bold text-gray-800 flex items-center justify-center gap-2">
+                                                                        <Building className="w-6 h-6 text-blue-600" />
+                                                                        Building {buildingId}
+                                                                    </h3>
+                                                                    <p className="text-sm text-gray-600">{buildingResidents.length} residents</p>
+                                                                </div>
+                                                                
+                                                                <div className="space-y-2">
+                                                                    {buildingLayout.map(({ floor, units }) => (
+                                                                        <div key={floor} className="bg-white rounded-lg p-3 shadow-sm">
+                                                                            <div className="text-center mb-2">
+                                                                                <span className="text-sm font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded">
+                                                                                    Floor {floor}
+                                                                                </span>
+                                                                            </div>
+                                                                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-2">
+                                                                                {units.map(resident => (
+                                                                                    <div 
+                                                                                        key={resident.id} 
+                                                                                        className={`${
+                                                                                            currentUser && currentUser.id === resident.id 
+                                                                                                ? 'bg-gradient-to-br from-yellow-50 to-yellow-100 border-2 border-yellow-300' 
+                                                                                                : 'bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200'
+                                                                                        } rounded-lg p-3 hover:shadow-md transition-all ${
+                                                                                            canMessageResident(resident) ? 'cursor-pointer group' : ''
+                                                                                        }`}
+                                                                                        onClick={() => canMessageResident(resident) && openMessageModal(resident)}
+                                                                                    >
+                                                                                        <div className="text-center">
+                                                                                            <div className="flex items-center justify-center gap-1 mb-1 relative">
+                                                                                                <User className={`w-4 h-4 ${
+                                                                                                    currentUser && currentUser.id === resident.id 
+                                                                                                        ? 'text-yellow-700' 
+                                                                                                        : 'text-green-700'
+                                                                                                }`} />
+                                                                                                {resident.isOnline && (
+                                                                                                    <div className="absolute top-0 right-0 w-2 h-2 bg-green-500 rounded-full border border-white"></div>
+                                                                                                )}
+                                                                                            </div>
+                                                                                            <div className={`font-bold text-xs mb-1 ${
+                                                                                                currentUser && currentUser.id === resident.id 
+                                                                                                    ? 'text-yellow-800' 
+                                                                                                    : 'text-green-800'
+                                                                                            }`}>
+                                                                                                Unit {resident.unitNumber}
+                                                                                            </div>
+                                                                                            <div className={`text-xs font-medium truncate ${
+                                                                                                currentUser && currentUser.id === resident.id 
+                                                                                                    ? 'text-yellow-700' 
+                                                                                                    : 'text-green-700'
+                                                                                            }`}>
+                                                                                                {resident.name}
+                                                                                                {currentUser && currentUser.id === resident.id && (
+                                                                                                    <span className="block text-xs text-yellow-600">(You)</span>
+                                                                                                )}
+                                                                                            </div>
+                                                                                            {canMessageResident(resident) && (
+                                                                                                <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                                                    <MessageCircle className="w-3 h-3 mx-auto text-green-600" />
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                                
+                                                                <div className="mt-4 text-center">
+                                                                    <div className="text-xs text-gray-600 bg-white rounded-full px-3 py-1 inline-block">
+                                                                        <Eye className="w-3 h-3 inline mr-1" />
+                                                                        Click any unit to message resident
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Registration Modal */}
+                        {showRegistrationForm && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                                <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
+                                    <h2 className="text-2xl font-bold text-gray-800 mb-6">Add New Resident</h2>
+                                    
+                                    {error && (
+                                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                                            <p className="text-sm text-red-800">{error}</p>
+                                        </div>
+                                    )}
+                                    
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                                            <input
+                                                type="text"
+                                                value={formData.name}
+                                                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Zone ID *</label>
+                                            <input
+                                                type="text"
+                                                value={formData.zoneId}
+                                                onChange={(e) => setFormData({...formData, zoneId: e.target.value})}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                placeholder="e.g., A, B, C"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Building ID *</label>
+                                            <input
+                                                type="text"
+                                                value={formData.buildingId}
+                                                onChange={(e) => setFormData({...formData, buildingId: e.target.value})}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                placeholder="e.g., 1, 2, 3"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Unit Number *</label>
+                                            <input
+                                                type="text"
+                                                value={formData.unitNumber}
+                                                onChange={(e) => setFormData({...formData, unitNumber: e.target.value})}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                placeholder="e.g., 101, 102, 203"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Email (Optional)</label>
+                                            <input
+                                                type="email"
+                                                value={formData.email}
+                                                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Phone (Optional)</label>
+                                            <input
+                                                type="tel"
+                                                value={formData.phone}
+                                                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                        <div className="flex gap-4 pt-4">
+                                            <button
+                                                onClick={handleRegistration}
+                                                disabled={loading}
+                                                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                            >
+                                                {loading ? 'Adding...' : 'Add Resident'}
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setShowRegistrationForm(false);
+                                                    setError('');
+                                                }}
+                                                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         )}
-                        
-                        {/* Resident Directory Content */}
-                        <div className="bg-white rounded-xl shadow-lg p-8">
-                            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                                <h2 className="text-2xl font-bold text-gray-800">Resident Directory</h2>
-                                <div className="flex items-center gap-4">
-                                    <select value={selectedZone} onChange={e => setSelectedZone(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-lg">
-                                        <option value="">All Zones</option>
-                                        {getUniqueValues('zoneId').map(zone => <option key={zone} value={zone}>Zone {zone}</option>)}
-                                    </select>
-                                    <div className="flex bg-gray-200 rounded-lg p-1">
-                                        <button onClick={() => setViewMode('list')} className={`px-4 py-2 rounded-md flex items-center gap-2 ${viewMode === 'list' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'}`}><List /> List</button>
-                                        <button onClick={() => setViewMode('visual')} className={`px-4 py-2 rounded-md flex items-center gap-2 ${viewMode === 'visual' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'}`}><Grid /> Visual</button>
+
+                        {/* Message Modal */}
+                        {showMessageModal && messageRecipient && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                                <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
+                                    <h2 className="text-2xl font-bold text-gray-800 mb-4">Send Message</h2>
+                                    
+                                    {error && (
+                                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                                            <p className="text-sm text-red-800">{error}</p>
+                                        </div>
+                                    )}
+                                    
+                                    <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                                        <p className="font-semibold text-gray-800">{messageRecipient.name}</p>
+                                        <p className="text-sm text-gray-600">
+                                            Zone {messageRecipient.zoneId} • Building {messageRecipient.buildingId} • Unit {messageRecipient.unitNumber}
+                                        </p>
+                                    </div>
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                                        <textarea
+                                            value={messageText}
+                                            onChange={(e) => setMessageText(e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none"
+                                            placeholder="Type your message here..."
+                                        />
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <button
+                                            onClick={handleSendMessage}
+                                            disabled={loading || !messageText.trim()}
+                                            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            <Send className="w-4 h-4" />
+                                            {loading ? 'Sending...' : 'Send Message'}
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setShowMessageModal(false);
+                                                setMessageRecipient(null);
+                                                setMessageText('');
+                                                setError('');
+                                            }}
+                                            className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
                                     </div>
                                 </div>
                             </div>
-
-                            {viewMode === 'list' ? (
-                                <div className="overflow-x-auto">
-                                    <table className="min-w-full bg-white">
-                                        <thead className="bg-gray-100">
-                                            <tr>
-                                                <th className="text-left py-3 px-4 font-semibold text-sm">Name</th>
-                                                <th className="text-left py-3 px-4 font-semibold text-sm">Unit</th>
-                                                <th className="text-left py-3 px-4 font-semibold text-sm">Contact</th>
-                                                <th className="text-left py-3 px-4 font-semibold text-sm">Status</th>
-                                                <th className="text-left py-3 px-4 font-semibold text-sm">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {residents.filter(r => !selectedZone || r.zoneId === selectedZone).map(resident => (
-                                                <tr key={resident.id} className="border-b hover:bg-gray-50 transition-colors duration-200">
-                                                    <td className="py-3 px-4">{resident.name}</td>
-                                                    <td className="py-3 px-4">Zone {resident.zoneId}, Bldg {resident.buildingId}, Unit {resident.unitNumber}</td>
-                                                    <td className="py-3 px-4">{resident.email}{resident.phone && `, ${resident.phone}`}</td>
-                                                    <td className="py-3 px-4">{resident.isOnline ? <span className="text-green-500">Online</span> : 'Offline'}</td>
-                                                    <td className="py-3 px-4">
-                                                        {currentUser.id !== resident.id && <button className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">Message</button>}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            ) : (
-                                <div>
-                                    <p>Visual view coming soon!</p>
-                                </div>
-                            )}
-                        </div>
+                        )}
                     </div>
                 </div>
             );
