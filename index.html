@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Salt Community Hub</title>
+    <title>Community Hub</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -124,6 +124,13 @@
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
         );
+        
+        const Edit = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </svg>
+        );
 
         function CommunityHub() {
             const [residents, setResidents] = useState([]);
@@ -143,7 +150,8 @@
             const [messageText, setMessageText] = useState('');
             const [showInbox, setShowInbox] = useState(false);
             const [showPassword, setShowPassword] = useState(false);
-            
+            const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+
             const [authData, setAuthData] = useState({
                 email: '',
                 password: '',
@@ -163,10 +171,17 @@
                 email: '',
                 phone: ''
             });
+            
+            const [editFormData, setEditFormData] = useState({
+                name: '',
+                phone: '',
+                zoneId: '',
+                buildingId: '',
+                unitNumber: ''
+            });
 
             // Check if Firebase is configured
             const isFirebaseConfigured = () => {
-                // A simple check to see if the apiKey has been replaced
                 return firebaseConfig.apiKey !== "your-api-key-here" && firebaseConfig.apiKey.startsWith("AIza");
             };
 
@@ -180,14 +195,12 @@
                 const unsubscribe = auth.onAuthStateChanged(async (user) => {
                     if (user) {
                         try {
-                            // Get user profile from Firestore
                             const userDoc = await db.collection('users').doc(user.uid).get();
                             if (userDoc.exists) {
                                 const userData = { id: user.uid, ...userDoc.data() };
                                 setCurrentUser(userData);
                                 setIsAuthenticated(true);
                                 
-                                // Update user online status
                                 await db.collection('users').doc(user.uid).update({
                                     isOnline: true,
                                     lastSeen: firebase.firestore.FieldValue.serverTimestamp()
@@ -217,39 +230,19 @@
                 }
 
                 if (!isFirebaseConfigured()) {
-                    console.log('Firebase not configured, loading demo data');
-                    const demoUsers = [
-                        { 
-                            id: 'demo1', 
-                            email: 'demo@example.com', 
-                            name: 'Demo User', 
-                            zoneId: 'A', 
-                            buildingId: '1', 
-                            unitNumber: '101', 
-                            phone: '555-0123', 
-                            joinedDate: '2025-01-01', 
-                            isOnline: false 
-                        }
-                    ];
+                    const demoUsers = [ { id: 'demo1', email: 'demo@example.com', name: 'Demo User', zoneId: 'A', buildingId: '1', unitNumber: '101', phone: '555-0123', joinedDate: '2025-01-01', isOnline: false } ];
                     setResidents(demoUsers);
                     return;
                 }
-
-                console.log('Fetching residents for authenticated user...');
                 
                 const unsubscribe = db.collection('users')
                     .onSnapshot((snapshot) => {
-                        const residentsData = snapshot.docs.map(doc => ({
-                            id: doc.id,
-                            ...doc.data()
-                        }));
-                        
+                        const residentsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                         residentsData.sort((a, b) => {
                             if (a.zoneId !== b.zoneId) return a.zoneId.localeCompare(b.zoneId);
                             if (a.buildingId !== b.buildingId) return a.buildingId.localeCompare(b.buildingId);
                             return parseInt(a.unitNumber) - parseInt(b.unitNumber);
                         });
-                        
                         setResidents(residentsData);
                         setError(''); 
                     }, (error) => {
@@ -271,10 +264,7 @@
                     .where('participants', 'array-contains', currentUser.id)
                     .orderBy('timestamp', 'desc')
                     .onSnapshot((snapshot) => {
-                        const messagesData = snapshot.docs.map(doc => ({
-                            id: doc.id,
-                            ...doc.data()
-                        }));
+                        const messagesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                         setMessages(messagesData);
                     }, (error) => {
                         console.error('Error loading messages:', error);
@@ -290,56 +280,31 @@
                     setError('Firebase is not configured. Please add your Firebase configuration.');
                     return;
                 }
-
                 const { email, password, confirmPassword, name, zoneId, buildingId, unitNumber, phone } = authData;
-                
                 if (!email || !password || !name || !zoneId || !buildingId || !unitNumber) {
                     setError('Please fill in all required fields');
                     return;
                 }
-                
                 if (password !== confirmPassword) {
                     setError('Passwords do not match');
                     return;
                 }
-
                 if (password.length < 6) {
                     setError('Password must be at least 6 characters long');
                     return;
                 }
-
                 setLoading(true);
                 setError('');
-
                 try {
-                    // Create user account first
                     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                     const user = userCredential.user;
-
-                    // Then, create user profile in Firestore
                     await db.collection('users').doc(user.uid).set({
-                        email,
-                        name,
-                        zoneId,
-                        buildingId,
-                        unitNumber,
-                        phone: phone || '',
+                        email, name, zoneId, buildingId, unitNumber, phone: phone || '',
                         joinedDate: firebase.firestore.FieldValue.serverTimestamp(),
                         isOnline: true,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
-
-                    setAuthData({
-                        email: '',
-                        password: '',
-                        confirmPassword: '',
-                        name: '',
-                        zoneId: '',
-                        buildingId: '',
-                        unitNumber: '',
-                        phone: ''
-                    });
-
+                    setAuthData({ email: '', password: '', confirmPassword: '', name: '', zoneId: '', buildingId: '', unitNumber: '', phone: '' });
                 } catch (error) {
                     console.error('Error during sign up:', error);
                     setError(error.message);
@@ -353,17 +318,13 @@
                     setError('Firebase is not configured. Please add your Firebase configuration.');
                     return;
                 }
-
                 const { email, password } = authData;
-                
                 if (!email || !password) {
                     setError('Please enter email and password');
                     return;
                 }
-
                 setLoading(true);
                 setError('');
-
                 try {
                     await auth.signInWithEmailAndPassword(email, password);
                     setAuthData({ email: '', password: '', confirmPassword: '', name: '', zoneId: '', buildingId: '', unitNumber: '', phone: '' });
@@ -381,7 +342,6 @@
                     setIsAuthenticated(false);
                     return;
                 }
-
                 try {
                     if (currentUser) {
                         await db.collection('users').doc(currentUser.id).update({
@@ -401,41 +361,29 @@
                     setError('Firebase is not configured. Please add your Firebase configuration.');
                     return;
                 }
-
                 if (!formData.name || !formData.zoneId || !formData.buildingId || !formData.unitNumber) {
                     setError('Please fill in all required fields');
                     return;
                 }
-
                 try {
                     const existingUnit = await db.collection('users')
                         .where('zoneId', '==', formData.zoneId)
                         .where('buildingId', '==', formData.buildingId)
                         .where('unitNumber', '==', formData.unitNumber)
                         .get();
-
                     if (!existingUnit.empty) {
                         setError('This unit is already registered');
                         return;
                     }
-
                     await db.collection('users').add({
-                        name: formData.name,
-                        zoneId: formData.zoneId,
-                        buildingId: formData.buildingId,
-                        unitNumber: formData.unitNumber,
-                        email: formData.email || '',
-                        phone: formData.phone || '',
-                        joinedDate: firebase.firestore.FieldValue.serverTimestamp(),
-                        isOnline: false,
-                        registeredBy: currentUser?.id,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        name: formData.name, zoneId: formData.zoneId, buildingId: formData.buildingId,
+                        unitNumber: formData.unitNumber, email: formData.email || '', phone: formData.phone || '',
+                        joinedDate: firebase.firestore.FieldValue.serverTimestamp(), isOnline: false,
+                        registeredBy: currentUser?.id, createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
-
                     setFormData({ name: '', zoneId: '', buildingId: '', unitNumber: '', email: '', phone: '' });
                     setShowRegistrationForm(false);
                     setError('');
-
                 } catch (error) {
                     console.error('Error adding resident:', error);
                     setError('Error adding resident');
@@ -447,30 +395,71 @@
                     setError('Firebase is not configured. Please add your Firebase configuration.');
                     return;
                 }
-
                 if (!messageText.trim() || !currentUser || !messageRecipient) return;
-
                 try {
                     await db.collection('messages').add({
-                        fromId: currentUser.id,
-                        fromName: currentUser.name,
-                        toId: messageRecipient.id,
-                        toName: messageRecipient.name,
-                        message: messageText.trim(),
+                        fromId: currentUser.id, fromName: currentUser.name, toId: messageRecipient.id,
+                        toName: messageRecipient.name, message: messageText.trim(),
                         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                        participants: [currentUser.id, messageRecipient.id],
-                        read: false
+                        participants: [currentUser.id, messageRecipient.id], read: false
                     });
-
                     setMessageText('');
                     setShowMessageModal(false);
                     setMessageRecipient(null);
                     setError('');
                     alert(`Message sent to ${messageRecipient.name}!`);
-
                 } catch (error) {
                     console.error('Error sending message:', error);
                     setError('Error sending message');
+                }
+            };
+            
+            const handleUpdateProfile = async () => {
+                if (!isFirebaseConfigured() || !currentUser) {
+                    setError('You must be logged in to update your profile.');
+                    return;
+                }
+
+                const { name, phone, zoneId, buildingId, unitNumber } = editFormData;
+
+                if (!name.trim() || !zoneId.trim() || !buildingId.trim() || !unitNumber.trim()) {
+                    setError('Please fill in all required fields (*).');
+                    return;
+                }
+
+                setLoading(true);
+                setError('');
+
+                try {
+                    const unitChanged = zoneId !== currentUser.zoneId || buildingId !== currentUser.buildingId || unitNumber !== currentUser.unitNumber;
+
+                    if (unitChanged) {
+                        const existingUnitQuery = await db.collection('users')
+                            .where('zoneId', '==', zoneId)
+                            .where('buildingId', '==', buildingId)
+                            .where('unitNumber', '==', unitNumber)
+                            .get();
+                        
+                        const otherUsersInUnit = existingUnitQuery.docs.filter(doc => doc.id !== currentUser.id);
+
+                        if (otherUsersInUnit.length > 0) {
+                            setError('This unit is already registered by another resident.');
+                            setLoading(false);
+                            return;
+                        }
+                    }
+
+                    const userRef = db.collection('users').doc(currentUser.id);
+                    await userRef.update({ name, phone, zoneId, buildingId, unitNumber });
+
+                    setCurrentUser(prev => ({ ...prev, name, phone, zoneId, buildingId, unitNumber }));
+                    setShowEditProfileModal(false);
+
+                } catch (error) {
+                    console.error('Error updating profile:', error);
+                    setError('Failed to update profile. Please try again.');
+                } finally {
+                    setLoading(false);
                 }
             };
 
@@ -479,55 +468,43 @@
                     setError('Please sign in first to send messages');
                     return;
                 }
-                
-                if (currentUser.id === resident.id) {
-                    return;
-                }
-                
+                if (currentUser.id === resident.id) return;
                 setMessageRecipient(resident);
                 setShowMessageModal(true);
+                setError('');
+            };
+            
+            const openEditProfileModal = () => {
+                if (!currentUser) return;
+                setEditFormData({
+                    name: currentUser.name || '',
+                    phone: currentUser.phone || '',
+                    zoneId: currentUser.zoneId || '',
+                    buildingId: currentUser.buildingId || '',
+                    unitNumber: currentUser.unitNumber || ''
+                });
+                setShowEditProfileModal(true);
                 setError('');
             };
 
             const canMessageResident = (resident) => {
                 return currentUser && currentUser.id !== resident.id;
             };
-
-            const getUniqueZones = () => {
-                return [...new Set(residents.map(r => r.zoneId))].sort();
-            };
-
-            const getUniqueBuildingsInZone = (zoneId) => {
-                return [...new Set(residents.filter(r => r.zoneId === zoneId).map(r => r.buildingId))].sort();
-            };
-
-            const getAllUniqueBuildings = () => {
-                return [...new Set(residents.map(r => `${r.zoneId}-${r.buildingId}`))].sort();
-            };
-
-            const getResidentsInBuilding = (zoneId, buildingId) => {
-                return residents.filter(r => r.zoneId === zoneId && r.buildingId === buildingId)
-                    .sort((a, b) => parseInt(a.unitNumber) - parseInt(b.unitNumber));
-            };
+            const getUniqueZones = () => [...new Set(residents.map(r => r.zoneId))].sort();
+            const getUniqueBuildingsInZone = (zoneId) => [...new Set(residents.filter(r => r.zoneId === zoneId).map(r => r.buildingId))].sort();
+            const getAllUniqueBuildings = () => [...new Set(residents.map(r => `${r.zoneId}-${r.buildingId}`))].sort();
+            const getResidentsInBuilding = (zoneId, buildingId) => residents.filter(r => r.zoneId === zoneId && r.buildingId === buildingId).sort((a, b) => parseInt(a.unitNumber) - parseInt(b.unitNumber));
 
             const generateBuildingLayout = (buildingResidents) => {
                 if (buildingResidents.length === 0) return [];
-                
                 const unitsPerFloor = new Map();
-                
                 buildingResidents.forEach(resident => {
                     const unitNum = parseInt(resident.unitNumber);
                     const floor = Math.floor(unitNum / 100);
-                    const unitOnFloor = unitNum % 100;
-                    
-                    if (!unitsPerFloor.has(floor)) {
-                        unitsPerFloor.set(floor, []);
-                    }
-                    unitsPerFloor.get(floor).push({ ...resident, unitOnFloor, originalUnit: unitNum });
+                    if (!unitsPerFloor.has(floor)) unitsPerFloor.set(floor, []);
+                    unitsPerFloor.get(floor).push({ ...resident, unitOnFloor: unitNum % 100, originalUnit: unitNum });
                 });
-                
                 const sortedFloors = Array.from(unitsPerFloor.keys()).sort((a, b) => b - a);
-                
                 return sortedFloors.map(floor => ({
                     floor,
                     units: unitsPerFloor.get(floor).sort((a, b) => a.unitOnFloor - b.unitOnFloor)
@@ -554,7 +531,6 @@
                                 <h1 className="text-3xl font-bold text-gray-800 mb-2">Firebase Configuration Required</h1>
                                 <p className="text-gray-600">Please configure Firebase to enable authentication and data storage</p>
                             </div>
-
                             <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
                                 <div className="flex">
                                     <AlertTriangle className="w-5 h-5 text-yellow-400 mr-2" />
@@ -570,7 +546,6 @@
                                     </div>
                                 </div>
                             </div>
-
                             <div className="bg-gray-100 rounded-lg p-4">
                                 <h3 className="font-semibold text-gray-800 mb-2">Sample Firebase Config:</h3>
                                 <pre className="text-sm text-gray-600 overflow-x-auto">
@@ -584,10 +559,7 @@
 };`}
                                 </pre>
                             </div>
-
-                            <div className="mt-6 text-center">
-                                <p className="text-sm text-gray-500">The app is currently running in demo mode with limited functionality.</p>
-                            </div>
+                            <div className="mt-6 text-center"><p className="text-sm text-gray-500">The app is currently running in demo mode with limited functionality.</p></div>
                         </div>
                     </div>
                 );
@@ -599,156 +571,48 @@
                         <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full">
                             <div className="text-center mb-8">
                                 <Building className="w-16 h-16 text-blue-600 mx-auto mb-4" />
-                                <h1 className="text-3xl font-bold text-gray-800 mb-2">Salt Community Hub</h1>
+                                <h1 className="text-3xl font-bold text-gray-800 mb-2">Community Hub</h1>
                                 <p className="text-gray-600">Connect with your neighbors</p>
                             </div>
-
-                            {error && (
-                                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                                    <p className="text-sm text-red-800">{error}</p>
-                                </div>
-                            )}
-
+                            {error && (<div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6"><p className="text-sm text-red-800">{error}</p></div>)}
                             <div className="flex bg-gray-100 rounded-lg p-1 mb-6">
-                                <button
-                                    onClick={() => {
-                                        setAuthMode('signin');
-                                        setError('');
-                                    }}
-                                    className={`flex-1 py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2 ${
-                                        authMode === 'signin' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
-                                    }`}
-                                >
-                                    <LogIn className="w-4 h-4" />
-                                    Sign In
+                                <button onClick={() => { setAuthMode('signin'); setError(''); }} className={`flex-1 py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2 ${authMode === 'signin' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'}`}>
+                                    <LogIn className="w-4 h-4" /> Sign In
                                 </button>
-                                <button
-                                    onClick={() => {
-                                        setAuthMode('signup');
-                                        setError('');
-                                    }}
-                                    className={`flex-1 py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2 ${
-                                        authMode === 'signup' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
-                                    }`}
-                                >
-                                    <UserPlus className="w-4 h-4" />
-                                    Sign Up
+                                <button onClick={() => { setAuthMode('signup'); setError(''); }} className={`flex-1 py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2 ${authMode === 'signup' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'}`}>
+                                    <UserPlus className="w-4 h-4" /> Sign Up
                                 </button>
                             </div>
-
                             <div className="space-y-4">
                                 {authMode === 'signup' && (
                                     <>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-                                            <input
-                                                type="text"
-                                                value={authData.name}
-                                                onChange={(e) => setAuthData({...authData, name: e.target.value})}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            />
-                                        </div>
+                                        <div><label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label><input type="text" value={authData.name} onChange={(e) => setAuthData({...authData, name: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/></div>
                                         <div className="grid grid-cols-3 gap-3">
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Zone *</label>
-                                                <input
-                                                    type="text"
-                                                    value={authData.zoneId}
-                                                    onChange={(e) => setAuthData({...authData, zoneId: e.target.value})}
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                    placeholder="A"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Building *</label>
-                                                <input
-                                                    type="text"
-                                                    value={authData.buildingId}
-                                                    onChange={(e) => setAuthData({...authData, buildingId: e.target.value})}
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                    placeholder="1"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Unit *</label>
-                                                <input
-                                                    type="text"
-                                                    value={authData.unitNumber}
-                                                    onChange={(e) => setAuthData({...authData, unitNumber: e.target.value})}
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                    placeholder="101"
-                                                />
-                                            </div>
+                                            <div><label className="block text-sm font-medium text-gray-700 mb-1">Zone *</label><input type="text" value={authData.zoneId} onChange={(e) => setAuthData({...authData, zoneId: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="A"/></div>
+                                            <div><label className="block text-sm font-medium text-gray-700 mb-1">Building *</label><input type="text" value={authData.buildingId} onChange={(e) => setAuthData({...authData, buildingId: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="1"/></div>
+                                            <div><label className="block text-sm font-medium text-gray-700 mb-1">Unit *</label><input type="text" value={authData.unitNumber} onChange={(e) => setAuthData({...authData, unitNumber: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="101"/></div>
                                         </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Phone (Optional)</label>
-                                            <input
-                                                type="tel"
-                                                value={authData.phone}
-                                                onChange={(e) => setAuthData({...authData, phone: e.target.value})}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            />
-                                        </div>
+                                        <div><label className="block text-sm font-medium text-gray-700 mb-1">Phone (Optional)</label><input type="tel" value={authData.phone} onChange={(e) => setAuthData({...authData, phone: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/></div>
                                     </>
                                 )}
-                                
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                                    <input
-                                        type="email"
-                                        value={authData.email}
-                                        onChange={(e) => setAuthData({...authData, email: e.target.value})}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                </div>
-                                
+                                <div><label className="block text-sm font-medium text-gray-700 mb-1">Email *</label><input type="email" value={authData.email} onChange={(e) => setAuthData({...authData, email: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/></div>
                                 <div className="relative">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
-                                    <input
-                                        type={showPassword ? "text" : "password"}
-                                        value={authData.password}
-                                        onChange={(e) => setAuthData({...authData, password: e.target.value})}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                    <button onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 top-6">
-                                        {showPassword ? <EyeOff className="h-5 w-5 text-gray-500" /> : <Eye className="h-5 w-5 text-gray-500" />}
-                                    </button>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label><input type={showPassword ? "text" : "password"} value={authData.password} onChange={(e) => setAuthData({...authData, password: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                                    <button onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 top-6">{showPassword ? <EyeOff className="h-5 w-5 text-gray-500" /> : <Eye className="h-5 w-5 text-gray-500" />}</button>
                                 </div>
-                                
                                 {authMode === 'signup' && (
                                     <div className="relative">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password *</label>
-                                        <input
-                                            type={showPassword ? "text" : "password"}
-                                            value={authData.confirmPassword}
-                                            onChange={(e) => setAuthData({...authData, confirmPassword: e.target.value})}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
-                                        <button onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 top-6">
-                                            {showPassword ? <EyeOff className="h-5 w-5 text-gray-500" /> : <Eye className="h-5 w-5 text-gray-500" />}
-                                        </button>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password *</label><input type={showPassword ? "text" : "password"} value={authData.confirmPassword} onChange={(e) => setAuthData({...authData, confirmPassword: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                                        <button onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 top-6">{showPassword ? <EyeOff className="h-5 w-5 text-gray-500" /> : <Eye className="h-5 w-5 text-gray-500" />}</button>
                                     </div>
                                 )}
-                                
-                                <button
-                                    onClick={authMode === 'signin' ? handleSignIn : handleSignUp}
-                                    disabled={loading}
-                                    className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold"
-                                >
+                                <button onClick={authMode === 'signin' ? handleSignIn : handleSignUp} disabled={loading} className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold">
                                     {loading ? 'Please wait...' : (authMode === 'signin' ? 'Sign In' : 'Create Account')}
                                 </button>
                             </div>
-
                             <div className="mt-6 text-center text-sm text-gray-600">
-                                <p>
-                                    {authMode === 'signin' ? "Don't have an account? " : "Already have an account? "}
-                                    <button
-                                        onClick={() => {
-                                            setAuthMode(authMode === 'signin' ? 'signup' : 'signin');
-                                            setError('');
-                                        }}
-                                        className="text-blue-600 hover:underline font-medium"
-                                    >
+                                <p>{authMode === 'signin' ? "Don't have an account? " : "Already have an account? "}
+                                    <button onClick={() => { setAuthMode(authMode === 'signin' ? 'signup' : 'signin'); setError(''); }} className="text-blue-600 hover:underline font-medium">
                                         {authMode === 'signin' ? 'Sign up here' : 'Sign in here'}
                                     </button>
                                 </p>
@@ -766,60 +630,43 @@
                                 <div className="flex items-center gap-3">
                                     <Building className="text-blue-600 w-8 h-8" />
                                     <div>
-                                        <h1 className="text-3xl font-bold text-gray-800">Salt Community Hub</h1>
-                                        <p className="text-gray-600">Connect, communicate, and build Salt community</p>
+                                        <h1 className="text-3xl font-bold text-gray-800">Community Hub</h1>
+                                        <p className="text-gray-600">Connect, communicate, and build community</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-4">
                                     {currentUser && (
-                                        <div className="text-right mr-4">
-                                            <p className="font-semibold text-gray-800">{currentUser.name}</p>
-                                            <p className="text-sm text-gray-600">Zone {currentUser.zoneId} • Unit {currentUser.unitNumber}</p>
+                                        <div className="flex items-center gap-2">
+                                            <div className="text-right">
+                                                <p className="font-semibold text-gray-800">{currentUser.name}</p>
+                                                <p className="text-sm text-gray-600">Zone {currentUser.zoneId} • Unit {currentUser.unitNumber}</p>
+                                            </div>
+                                            <button onClick={openEditProfileModal} className="p-2 rounded-full hover:bg-gray-200 transition-colors" title="Edit Profile">
+                                                <Edit className="w-4 h-4 text-gray-600" />
+                                            </button>
                                         </div>
                                     )}
-                                    <button
-                                        onClick={handleSignOut}
-                                        className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
-                                    >
-                                        <LogOut className="w-4 h-4" />
-                                        Sign Out
+                                    <button onClick={handleSignOut} className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2">
+                                        <LogOut className="w-4 h-4" /> Sign Out
                                     </button>
                                 </div>
                             </div>
 
-                            {error && (
-                                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                                    <p className="text-sm text-red-800">{error}</p>
-                                </div>
-                            )}
+                            {error && (<div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6"><p className="text-sm text-red-800">{error}</p></div>)}
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                                 <div className="bg-blue-50 p-6 rounded-lg">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <Users className="text-blue-600 w-5 h-5" />
-                                        <h3 className="font-semibold text-gray-800">Total Residents</h3>
-                                    </div>
+                                    <div className="flex items-center gap-2 mb-2"><Users className="text-blue-600 w-5 h-5" /><h3 className="font-semibold text-gray-800">Total Residents</h3></div>
                                     <p className="text-2xl font-bold text-blue-600">{residents.length}</p>
                                 </div>
                                 <div className="bg-green-50 p-6 rounded-lg">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <Building className="text-green-600 w-5 h-5" />
-                                        <h3 className="font-semibold text-gray-800">Active Zones</h3>
-                                    </div>
+                                    <div className="flex items-center gap-2 mb-2"><Building className="text-green-600 w-5 h-5" /><h3 className="font-semibold text-gray-800">Active Zones</h3></div>
                                     <p className="text-2xl font-bold text-green-600">{getUniqueZones().length}</p>
                                 </div>
                                 <div className="bg-purple-50 p-6 rounded-lg">
                                     <div className="flex items-center justify-between mb-2">
-                                        <div className="flex items-center gap-2">
-                                            <MessageCircle className="text-purple-600 w-5 h-5" />
-                                            <h3 className="font-semibold text-gray-800">Your Messages</h3>
-                                        </div>
-                                        <button 
-                                            onClick={() => setShowInbox(!showInbox)}
-                                            className="text-sm bg-purple-200 text-purple-800 px-3 py-1 rounded-full hover:bg-purple-300 transition-colors"
-                                        >
-                                            {showInbox ? 'Hide' : 'Show'}
-                                        </button>
+                                        <div className="flex items-center gap-2"><MessageCircle className="text-purple-600 w-5 h-5" /><h3 className="font-semibold text-gray-800">Your Messages</h3></div>
+                                        <button onClick={() => setShowInbox(!showInbox)} className="text-sm bg-purple-200 text-purple-800 px-3 py-1 rounded-full hover:bg-purple-300 transition-colors">{showInbox ? 'Hide' : 'Show'}</button>
                                     </div>
                                     <p className="text-2xl font-bold text-purple-600">{messages.filter(m => m.toId === currentUser?.id).length}</p>
                                 </div>
@@ -829,153 +676,76 @@
                                 <div className="bg-white rounded-xl shadow-inner border border-gray-200 p-6 mb-8">
                                     <h2 className="text-2xl font-bold text-gray-800 mb-4">Your Inbox</h2>
                                     <div className="space-y-4 max-h-96 overflow-y-auto pr-4">
-                                        {messages
-                                            .filter(m => m.toId === currentUser?.id)
-                                            .sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0))
+                                        {messages.filter(m => m.toId === currentUser?.id).sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0))
                                             .map(message => {
                                                 const sender = residents.find(r => r.id === message.fromId);
                                                 return (
                                                     <div key={message.id} className="border-l-4 border-purple-400 p-4 bg-gray-50 rounded-r-lg">
                                                         <div className="flex justify-between items-start mb-2">
                                                             <div>
-                                                                <p className="font-semibold text-gray-800">
-                                                                    From: {sender ? sender.name : message.fromName}
-                                                                </p>
-                                                                {sender && (
-                                                                    <p className="text-sm text-gray-600">
-                                                                        Zone {sender.zoneId} • Building {sender.buildingId} • Unit {sender.unitNumber}
-                                                                    </p>
-                                                                )}
+                                                                <p className="font-semibold text-gray-800">From: {sender ? sender.name : message.fromName}</p>
+                                                                {sender && (<p className="text-sm text-gray-600">Zone {sender.zoneId} • Building {sender.buildingId} • Unit {sender.unitNumber}</p>)}
                                                             </div>
-                                                            <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
-                                                                {message.timestamp?.toDate ? message.timestamp.toDate().toLocaleString() : 'Just now'}
-                                                            </span>
+                                                            <span className="text-xs text-gray-500 flex-shrink-0 ml-2">{message.timestamp?.toDate ? message.timestamp.toDate().toLocaleString() : 'Just now'}</span>
                                                         </div>
                                                         <p className="text-gray-700 mt-1">{message.message}</p>
                                                     </div>
                                                 );
-                                            })
-                                        }
-                                        {messages.filter(m => m.toId === currentUser?.id).length === 0 && (
-                                            <p className="text-gray-500 text-center py-8">You have no messages.</p>
-                                        )}
+                                            })}
+                                        {messages.filter(m => m.toId === currentUser?.id).length === 0 && (<p className="text-gray-500 text-center py-8">You have no messages.</p>)}
                                     </div>
                                 </div>
                             )}
 
                             <div className="mb-6">
                                 <div className="flex flex-wrap gap-4 mb-4">
-                                    <select
-                                        value={selectedZone}
-                                        onChange={(e) => {
-                                            setSelectedZone(e.target.value);
-                                            setSelectedBuilding('');
-                                        }}
-                                        className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    >
+                                    <select value={selectedZone} onChange={(e) => { setSelectedZone(e.target.value); setSelectedBuilding(''); }} className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                                         <option value="">All Zones</option>
-                                        {getUniqueZones().map(zone => (
-                                            <option key={zone} value={zone}>Zone {zone}</option>
-                                        ))}
+                                        {getUniqueZones().map(zone => (<option key={zone} value={zone}>Zone {zone}</option>))}
                                     </select>
-                                    
-                                    <select
-                                        value={selectedBuilding}
-                                        onChange={(e) => setSelectedBuilding(e.target.value)}
-                                        className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    >
+                                    <select value={selectedBuilding} onChange={(e) => setSelectedBuilding(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                                         <option value="">All Buildings</option>
-                                        {selectedZone ? (
-                                            getUniqueBuildingsInZone(selectedZone).map(building => (
-                                                <option key={building} value={building}>Building {building}</option>
-                                            ))
-                                        ) : (
-                                            getAllUniqueBuildings().map(building => {
-                                                const [zone, buildingId] = building.split('-');
-                                                return (
-                                                    <option key={building} value={buildingId}>Zone {zone} - Building {buildingId}</option>
-                                                );
-                                            })
-                                        )}
+                                        {selectedZone ? (getUniqueBuildingsInZone(selectedZone).map(building => (<option key={building} value={building}>Building {building}</option>))) : (getAllUniqueBuildings().map(building => { const [zone, buildingId] = building.split('-'); return (<option key={building} value={buildingId}>Zone {zone} - Building {buildingId}</option>); }))}
                                     </select>
-
                                     <div className="flex bg-gray-200 rounded-lg p-1">
-                                        <button
-                                            onClick={() => setViewMode('list')}
-                                            className={`px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${
-                                                viewMode === 'list' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
-                                            }`}
-                                        >
-                                            <List className="w-4 h-4" />
-                                            List View
-                                        </button>
-                                        <button
-                                            onClick={() => setViewMode('visual')}
-                                            className={`px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${
-                                                viewMode === 'visual' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
-                                            }`}
-                                        >
-                                            <Grid className="w-4 h-4" />
-                                            Building View
-                                        </button>
+                                        <button onClick={() => setViewMode('list')} className={`px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${viewMode === 'list' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'}`}><List className="w-4 h-4" />List View</button>
+                                        <button onClick={() => setViewMode('visual')} className={`px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${viewMode === 'visual' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'}`}><Grid className="w-4 h-4" />Building View</button>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <div className="space-y-6">
-                            {residents.length === 0 ? (
-                                isAuthenticated && (
+                            {residents.length === 0 ? (isAuthenticated && (
                                 <div className="bg-white rounded-xl shadow-lg p-12 text-center">
                                     <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                                     <h3 className="text-xl font-semibold text-gray-600 mb-2">No Residents Registered Yet</h3>
-                                    <p className="text-gray-500 mb-6">Start by registering the first resident to build your Salt community!</p>
-                                    <button
-                                        onClick={() => setShowRegistrationForm(true)}
-                                        className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-                                    >
-                                        Register First Resident
-                                    </button>
+                                    <p className="text-gray-500 mb-6">Start by registering the first resident to build your community!</p>
+                                    <button onClick={() => setShowRegistrationForm(true)} className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors">Register First Resident</button>
                                 </div>
-                                )
-                            ) : viewMode === 'list' ? (
+                            )) : viewMode === 'list' ? (
                                 getUniqueZones().map(zoneId => {
                                     if (selectedZone && selectedZone !== zoneId) return null;
-                                    
                                     return (
                                         <div key={zoneId} className="bg-white rounded-xl shadow-lg p-6">
                                             <h2 className="text-2xl font-bold text-gray-800 mb-4">Zone {zoneId}</h2>
                                             <div className="space-y-6">
                                                 {getUniqueBuildingsInZone(zoneId).map(buildingId => {
                                                     if (selectedBuilding && selectedBuilding !== buildingId) return null;
-                                                    
                                                     const buildingResidents = getResidentsInBuilding(zoneId, buildingId);
-                                                    
                                                     return (
                                                         <div key={buildingId} className="border border-gray-200 rounded-lg p-4">
-                                                            <h3 className="text-xl font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                                                                <Building className="w-5 h-5" />
-                                                                Building {buildingId}
-                                                            </h3>
+                                                            <h3 className="text-xl font-semibold text-gray-700 mb-4 flex items-center gap-2"><Building className="w-5 h-5" />Building {buildingId}</h3>
                                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                                                 {buildingResidents.map(resident => (
                                                                     <div key={resident.id} className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 hover:shadow-md transition-shadow">
                                                                         <div className="flex items-start justify-between mb-3">
                                                                             <div className="flex items-center gap-2">
-                                                                                <div className="relative">
-                                                                                    <User className="text-gray-600 w-5 h-5" />
-                                                                                    {resident.isOnline && (
-                                                                                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-                                                                                    )}
-                                                                                </div>
+                                                                                <div className="relative"><User className="text-gray-600 w-5 h-5" />{resident.isOnline && (<div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>)}</div>
                                                                                 <span className="font-semibold text-gray-800">{resident.name}</span>
-                                                                                {currentUser && currentUser.id === resident.id && (
-                                                                                    <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">You</span>
-                                                                                )}
+                                                                                {currentUser && currentUser.id === resident.id && (<span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">You</span>)}
                                                                             </div>
-                                                                            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
-                                                                                Unit {resident.unitNumber}
-                                                                            </span>
+                                                                            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">Unit {resident.unitNumber}</span>
                                                                         </div>
                                                                         <div className="text-sm text-gray-600 mb-3">
                                                                             <p>Zone: {resident.zoneId} • Building: {resident.buildingId}</p>
@@ -983,15 +753,7 @@
                                                                             {resident.phone && <p>Phone: {resident.phone}</p>}
                                                                             <p>Joined: {resident.joinedDate?.toDate ? resident.joinedDate.toDate().toLocaleDateString() : resident.joinedDate}</p>
                                                                         </div>
-                                                                        {canMessageResident(resident) && (
-                                                                            <button
-                                                                                onClick={() => openMessageModal(resident)}
-                                                                                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-                                                                            >
-                                                                                <MessageCircle className="w-4 h-4" />
-                                                                                Send Message
-                                                                            </button>
-                                                                        )}
+                                                                        {canMessageResident(resident) && (<button onClick={() => openMessageModal(resident)} className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"><MessageCircle className="w-4 h-4" />Send Message</button>)}
                                                                     </div>
                                                                 ))}
                                                             </div>
@@ -1006,83 +768,30 @@
                                 <div className="space-y-8">
                                     {getUniqueZones().map(zoneId => {
                                         if (selectedZone && selectedZone !== zoneId) return null;
-                                        
                                         return (
                                             <div key={zoneId} className="bg-white rounded-xl shadow-lg p-6">
                                                 <h2 className="text-2xl font-bold text-gray-800 mb-6">Zone {zoneId} - Building Layout</h2>
                                                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
                                                     {getUniqueBuildingsInZone(zoneId).map(buildingId => {
                                                         if (selectedBuilding && selectedBuilding !== buildingId) return null;
-                                                        
                                                         const buildingResidents = getResidentsInBuilding(zoneId, buildingId);
                                                         const buildingLayout = generateBuildingLayout(buildingResidents);
-                                                        
                                                         if (buildingLayout.length === 0) return null;
-                                                        
                                                         return (
                                                             <div key={buildingId} className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl p-6 border-2 border-blue-200">
-                                                                <div className="text-center mb-4">
-                                                                    <h3 className="text-xl font-bold text-gray-800 flex items-center justify-center gap-2">
-                                                                        <Building className="w-6 h-6 text-blue-600" />
-                                                                        Building {buildingId}
-                                                                    </h3>
-                                                                    <p className="text-sm text-gray-600">{buildingResidents.length} residents</p>
-                                                                </div>
-                                                                
+                                                                <div className="text-center mb-4"><h3 className="text-xl font-bold text-gray-800 flex items-center justify-center gap-2"><Building className="w-6 h-6 text-blue-600" />Building {buildingId}</h3><p className="text-sm text-gray-600">{buildingResidents.length} residents</p></div>
                                                                 <div className="space-y-2">
                                                                     {buildingLayout.map(({ floor, units }) => (
                                                                         <div key={floor} className="bg-white rounded-lg p-3 shadow-sm">
-                                                                            <div className="text-center mb-2">
-                                                                                <span className="text-sm font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded">
-                                                                                    Floor {floor}
-                                                                                </span>
-                                                                            </div>
+                                                                            <div className="text-center mb-2"><span className="text-sm font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded">Floor {floor}</span></div>
                                                                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-2">
                                                                                 {units.map(resident => (
-                                                                                    <div 
-                                                                                        key={resident.id} 
-                                                                                        className={`${
-                                                                                            currentUser && currentUser.id === resident.id 
-                                                                                                ? 'bg-gradient-to-br from-yellow-50 to-yellow-100 border-2 border-yellow-300' 
-                                                                                                : 'bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200'
-                                                                                        } rounded-lg p-3 hover:shadow-md transition-all ${
-                                                                                            canMessageResident(resident) ? 'cursor-pointer group' : ''
-                                                                                        }`}
-                                                                                        onClick={() => canMessageResident(resident) && openMessageModal(resident)}
-                                                                                    >
+                                                                                    <div key={resident.id} className={`${currentUser && currentUser.id === resident.id ? 'bg-gradient-to-br from-yellow-50 to-yellow-100 border-2 border-yellow-300' : 'bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200'} rounded-lg p-3 hover:shadow-md transition-all ${canMessageResident(resident) ? 'cursor-pointer group' : ''}`} onClick={() => canMessageResident(resident) && openMessageModal(resident)}>
                                                                                         <div className="text-center">
-                                                                                            <div className="flex items-center justify-center gap-1 mb-1 relative">
-                                                                                                <User className={`w-4 h-4 ${
-                                                                                                    currentUser && currentUser.id === resident.id 
-                                                                                                        ? 'text-yellow-700' 
-                                                                                                        : 'text-green-700'
-                                                                                                }`} />
-                                                                                                {resident.isOnline && (
-                                                                                                    <div className="absolute top-0 right-0 w-2 h-2 bg-green-500 rounded-full border border-white"></div>
-                                                                                                )}
-                                                                                            </div>
-                                                                                            <div className={`font-bold text-xs mb-1 ${
-                                                                                                currentUser && currentUser.id === resident.id 
-                                                                                                    ? 'text-yellow-800' 
-                                                                                                    : 'text-green-800'
-                                                                                            }`}>
-                                                                                                Unit {resident.unitNumber}
-                                                                                            </div>
-                                                                                            <div className={`text-xs font-medium truncate ${
-                                                                                                currentUser && currentUser.id === resident.id 
-                                                                                                    ? 'text-yellow-700' 
-                                                                                                    : 'text-green-700'
-                                                                                            }`}>
-                                                                                                {resident.name}
-                                                                                                {currentUser && currentUser.id === resident.id && (
-                                                                                                    <span className="block text-xs text-yellow-600">(You)</span>
-                                                                                                )}
-                                                                                            </div>
-                                                                                            {canMessageResident(resident) && (
-                                                                                                <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                                                    <MessageCircle className="w-3 h-3 mx-auto text-green-600" />
-                                                                                                </div>
-                                                                                            )}
+                                                                                            <div className="flex items-center justify-center gap-1 mb-1 relative"><User className={`w-4 h-4 ${currentUser && currentUser.id === resident.id ? 'text-yellow-700' : 'text-green-700'}`} />{resident.isOnline && (<div className="absolute top-0 right-0 w-2 h-2 bg-green-500 rounded-full border border-white"></div>)}</div>
+                                                                                            <div className={`font-bold text-xs mb-1 ${currentUser && currentUser.id === resident.id ? 'text-yellow-800' : 'text-green-800'}`}>Unit {resident.unitNumber}</div>
+                                                                                            <div className={`text-xs font-medium truncate ${currentUser && currentUser.id === resident.id ? 'text-yellow-700' : 'text-green-700'}`}>{resident.name}{currentUser && currentUser.id === resident.id && (<span className="block text-xs text-yellow-600">(You)</span>)}</div>
+                                                                                            {canMessageResident(resident) && (<div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity"><MessageCircle className="w-3 h-3 mx-auto text-green-600" /></div>)}
                                                                                         </div>
                                                                                     </div>
                                                                                 ))}
@@ -1090,13 +799,7 @@
                                                                         </div>
                                                                     ))}
                                                                 </div>
-                                                                
-                                                                <div className="mt-4 text-center">
-                                                                    <div className="text-xs text-gray-600 bg-white rounded-full px-3 py-1 inline-block">
-                                                                        <Eye className="w-3 h-3 inline mr-1" />
-                                                                        Click any unit to message resident
-                                                                    </div>
-                                                                </div>
+                                                                <div className="mt-4 text-center"><div className="text-xs text-gray-600 bg-white rounded-full px-3 py-1 inline-block"><Eye className="w-3 h-3 inline mr-1" />Click any unit to message resident</div></div>
                                                             </div>
                                                         );
                                                     })}
@@ -1113,88 +816,17 @@
                             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                                 <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
                                     <h2 className="text-2xl font-bold text-gray-800 mb-6">Add New Resident</h2>
-                                    
-                                    {error && (
-                                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                                            <p className="text-sm text-red-800">{error}</p>
-                                        </div>
-                                    )}
-                                    
+                                    {error && (<div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4"><p className="text-sm text-red-800">{error}</p></div>)}
                                     <div className="space-y-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-                                            <input
-                                                type="text"
-                                                value={formData.name}
-                                                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Zone ID *</label>
-                                            <input
-                                                type="text"
-                                                value={formData.zoneId}
-                                                onChange={(e) => setFormData({...formData, zoneId: e.target.value})}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                placeholder="e.g., A, B, C"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Building ID *</label>
-                                            <input
-                                                type="text"
-                                                value={formData.buildingId}
-                                                onChange={(e) => setFormData({...formData, buildingId: e.target.value})}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                placeholder="e.g., 1, 2, 3"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Unit Number *</label>
-                                            <input
-                                                type="text"
-                                                value={formData.unitNumber}
-                                                onChange={(e) => setFormData({...formData, unitNumber: e.target.value})}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                placeholder="e.g., 101, 102, 203"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Email (Optional)</label>
-                                            <input
-                                                type="email"
-                                                value={formData.email}
-                                                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Phone (Optional)</label>
-                                            <input
-                                                type="tel"
-                                                value={formData.phone}
-                                                onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            />
-                                        </div>
+                                        <div><label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label><input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/></div>
+                                        <div><label className="block text-sm font-medium text-gray-700 mb-1">Zone ID *</label><input type="text" value={formData.zoneId} onChange={(e) => setFormData({...formData, zoneId: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., A, B, C"/></div>
+                                        <div><label className="block text-sm font-medium text-gray-700 mb-1">Building ID *</label><input type="text" value={formData.buildingId} onChange={(e) => setFormData({...formData, buildingId: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., 1, 2, 3"/></div>
+                                        <div><label className="block text-sm font-medium text-gray-700 mb-1">Unit Number *</label><input type="text" value={formData.unitNumber} onChange={(e) => setFormData({...formData, unitNumber: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., 101, 102, 203"/></div>
+                                        <div><label className="block text-sm font-medium text-gray-700 mb-1">Email (Optional)</label><input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/></div>
+                                        <div><label className="block text-sm font-medium text-gray-700 mb-1">Phone (Optional)</label><input type="tel" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/></div>
                                         <div className="flex gap-4 pt-4">
-                                            <button
-                                                onClick={handleRegistration}
-                                                disabled={loading}
-                                                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                            >
-                                                {loading ? 'Adding...' : 'Add Resident'}
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    setShowRegistrationForm(false);
-                                                    setError('');
-                                                }}
-                                                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
-                                            >
-                                                Cancel
-                                            </button>
+                                            <button onClick={handleRegistration} disabled={loading} className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">{loading ? 'Adding...' : 'Add Resident'}</button>
+                                            <button onClick={() => { setShowRegistrationForm(false); setError(''); }} className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors">Cancel</button>
                                         </div>
                                     </div>
                                 </div>
@@ -1206,48 +838,56 @@
                             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                                 <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
                                     <h2 className="text-2xl font-bold text-gray-800 mb-4">Send Message</h2>
-                                    
-                                    {error && (
-                                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                                            <p className="text-sm text-red-800">{error}</p>
-                                        </div>
-                                    )}
-                                    
+                                    {error && (<div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4"><p className="text-sm text-red-800">{error}</p></div>)}
                                     <div className="bg-gray-50 p-4 rounded-lg mb-4">
                                         <p className="font-semibold text-gray-800">{messageRecipient.name}</p>
-                                        <p className="text-sm text-gray-600">
-                                            Zone {messageRecipient.zoneId} • Building {messageRecipient.buildingId} • Unit {messageRecipient.unitNumber}
-                                        </p>
+                                        <p className="text-sm text-gray-600">Zone {messageRecipient.zoneId} • Building {messageRecipient.buildingId} • Unit {messageRecipient.unitNumber}</p>
                                     </div>
                                     <div className="mb-4">
                                         <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
-                                        <textarea
-                                            value={messageText}
-                                            onChange={(e) => setMessageText(e.target.value)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none"
-                                            placeholder="Type your message here..."
-                                        />
+                                        <textarea value={messageText} onChange={(e) => setMessageText(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none" placeholder="Type your message here..."/>
                                     </div>
                                     <div className="flex gap-4">
-                                        <button
-                                            onClick={handleSendMessage}
-                                            disabled={loading || !messageText.trim()}
-                                            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-                                        >
-                                            <Send className="w-4 h-4" />
-                                            {loading ? 'Sending...' : 'Send Message'}
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setShowMessageModal(false);
-                                                setMessageRecipient(null);
-                                                setMessageText('');
-                                                setError('');
-                                            }}
-                                            className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
-                                        >
-                                            Cancel
-                                        </button>
+                                        <button onClick={handleSendMessage} disabled={loading || !messageText.trim()} className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"><Send className="w-4 h-4" />{loading ? 'Sending...' : 'Send Message'}</button>
+                                        <button onClick={() => { setShowMessageModal(false); setMessageRecipient(null); setMessageText(''); setError(''); }} className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors">Cancel</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        
+                        {/* Edit Profile Modal */}
+                        {showEditProfileModal && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                                <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
+                                    <h2 className="text-2xl font-bold text-gray-800 mb-6">Edit Your Profile</h2>
+                                    {error && (<div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4"><p className="text-sm text-red-800">{error}</p></div>)}
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                                            <input type="text" value={editFormData.name} onChange={(e) => setEditFormData({...editFormData, name: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-3">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Zone *</label>
+                                                <input type="text" value={editFormData.zoneId} onChange={(e) => setEditFormData({...editFormData, zoneId: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Building *</label>
+                                                <input type="text" value={editFormData.buildingId} onChange={(e) => setEditFormData({...editFormData, buildingId: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Unit *</label>
+                                                <input type="text" value={editFormData.unitNumber} onChange={(e) => setEditFormData({...editFormData, unitNumber: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                                            <input type="tel" value={editFormData.phone} onChange={(e) => setEditFormData({...editFormData, phone: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                                        </div>
+                                        <div className="flex gap-4 pt-4">
+                                            <button onClick={handleUpdateProfile} disabled={loading} className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">{loading ? 'Saving...' : 'Save Changes'}</button>
+                                            <button onClick={() => setShowEditProfileModal(false)} className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors">Cancel</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
